@@ -31,7 +31,7 @@ func Unpack(in string) (string, error) {
 	for i, currentRune := range in {
 		currentStr := string(currentRune)
 		prevStr := string(prevRune)
-		currentIsSafe := currentStr == `\` && (prevStr != `\` || !prevIsSafe)
+		currentIsSafe := currentStr == `\` && !prevIsSafe
 
 		repeatCount, err := strconv.Atoi(currentStr)
 		currentIsCounter := err == nil && !prevIsSafe
