@@ -27,8 +27,9 @@ func Unpack(in string) (string, error) {
 	var prevStr string
 	var prevIsCounter bool
 	var prevIsSafe bool
+	var i int
 	runeCount := utf8.RuneCountInString(in)
-	for i, currentRune := range in {
+	for _, currentRune := range in {
 		currentStr := string(currentRune)
 		currentIsSafe := currentStr == `\` && !prevIsSafe
 
@@ -40,6 +41,7 @@ func Unpack(in string) (string, error) {
 				return "", ErrInvalidString
 			}
 			prevStr = currentStr
+			i++
 			continue
 		}
 
@@ -56,12 +58,18 @@ func Unpack(in string) (string, error) {
 		} else if !prevIsCounter && !prevIsSafe {
 			strBuilder.WriteString(prevStr)
 		}
-		if i == runeCount-1 && !currentIsCounter {
-			strBuilder.WriteString(currentStr)
+		if i == runeCount-1 {
+			if currentIsSafe {
+				return "", ErrInvalidString
+			}
+			if !currentIsCounter {
+				strBuilder.WriteString(currentStr)
+			}
 		}
 		prevStr = currentStr
 		prevIsCounter = currentIsCounter
 		prevIsSafe = currentIsSafe
+		i++
 	}
 	return strBuilder.String(), nil
 }
