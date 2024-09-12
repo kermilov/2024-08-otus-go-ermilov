@@ -24,13 +24,12 @@ var allowToSafe = map[rune]struct{}{
 
 func Unpack(in string) (string, error) {
 	var strBuilder strings.Builder
-	var prevRune rune
+	var prevStr string
 	var prevIsCounter bool
 	var prevIsSafe bool
 	runeCount := utf8.RuneCountInString(in)
 	for i, currentRune := range in {
 		currentStr := string(currentRune)
-		prevStr := string(prevRune)
 		currentIsSafe := currentStr == `\` && !prevIsSafe
 
 		repeatCount, err := strconv.Atoi(currentStr)
@@ -40,7 +39,7 @@ func Unpack(in string) (string, error) {
 			if currentIsCounter {
 				return "", ErrInvalidString
 			}
-			prevRune = currentRune
+			prevStr = currentStr
 			continue
 		}
 
@@ -55,12 +54,12 @@ func Unpack(in string) (string, error) {
 		if currentIsCounter {
 			strBuilder.WriteString(strings.Repeat(prevStr, repeatCount))
 		} else if !prevIsCounter && !prevIsSafe {
-			strBuilder.WriteRune(prevRune)
+			strBuilder.WriteString(prevStr)
 		}
 		if i == runeCount-1 && !currentIsCounter {
 			strBuilder.WriteString(currentStr)
 		}
-		prevRune = currentRune
+		prevStr = currentStr
 		prevIsCounter = currentIsCounter
 		prevIsSafe = currentIsSafe
 	}
