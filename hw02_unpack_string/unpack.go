@@ -9,47 +9,44 @@ import (
 
 var ErrInvalidString = errors.New("invalid string")
 
-var allowToSafe = map[rune]struct{}{
-	'1':  {},
-	'2':  {},
-	'3':  {},
-	'4':  {},
-	'5':  {},
-	'6':  {},
-	'7':  {},
-	'8':  {},
-	'9':  {},
-	'\\': {},
+var allowToSafe = map[string]struct{}{
+	"1":  {},
+	"2":  {},
+	"3":  {},
+	"4":  {},
+	"5":  {},
+	"6":  {},
+	"7":  {},
+	"8":  {},
+	"9":  {},
+	"\\": {},
 }
 
 func Unpack(in string) (string, error) {
-	var strBuilder strings.Builder
-	var prevStr string
+	runeCount := utf8.RuneCountInString(in)
+	if runeCount == 0 {
+		return "", nil
+	}
 	var prevIsCounter bool
 	var prevIsSafe bool
-	var i int
-	runeCount := utf8.RuneCountInString(in)
-	for _, currentRune := range in {
-		currentStr := string(currentRune)
+	inRunes := []rune(in)
+	prevStr := string(inRunes[0])
+	if _, err := strconv.Atoi(prevStr); err == nil {
+		return "", ErrInvalidString
+	}
+	var strBuilder strings.Builder
+	for i := 1; i < runeCount; i++ {
+		currentStr := string(inRunes[i])
 		currentIsSafe := currentStr == `\` && !prevIsSafe
 
 		repeatCount, err := strconv.Atoi(currentStr)
 		currentIsCounter := err == nil && !prevIsSafe
 
-		if i == 0 {
-			if currentIsCounter {
-				return "", ErrInvalidString
-			}
-			prevStr = currentStr
-			i++
-			continue
-		}
-
 		if prevIsCounter && currentIsCounter {
 			return "", ErrInvalidString
 		}
 
-		if _, currentIsAllowToSafe := allowToSafe[currentRune]; prevIsSafe && !currentIsAllowToSafe {
+		if _, currentIsAllowToSafe := allowToSafe[currentStr]; prevIsSafe && !currentIsAllowToSafe {
 			return "", ErrInvalidString
 		}
 
@@ -69,7 +66,6 @@ func Unpack(in string) (string, error) {
 		prevStr = currentStr
 		prevIsCounter = currentIsCounter
 		prevIsSafe = currentIsSafe
-		i++
 	}
 	return strBuilder.String(), nil
 }
