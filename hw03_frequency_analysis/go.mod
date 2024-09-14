@@ -1,4 +1,4 @@
-module github.com/fixme_my_friend/hw03_frequency_analysis
+module github.com/kermilov/2024-08-otus-go-ermilov/hw03_frequency_analysis
 
 go 1.22
 
