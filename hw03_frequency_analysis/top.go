@@ -28,7 +28,9 @@ func Top10(in string) []string {
 		return countByWord[left] > countByWord[right]
 	})
 	if len(wordsSet) > 10 {
-		return wordsSet[0:10]
+		result := make([]string, 10)
+		copy(result, wordsSet[0:10])
+		return result
 	}
 	return wordsSet
 }
