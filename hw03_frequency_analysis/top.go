@@ -13,11 +13,11 @@ func Top10(in string) []string {
 	countByWord := make(map[string]int, len(words))
 	wordsSet := make([]string, 0, len(words))
 	for _, word := range words {
-		count, isExist := countByWord[word]
-		countByWord[word] = count + 1
+		_, isExist := countByWord[word]
 		if !isExist {
 			wordsSet = append(wordsSet, word)
 		}
+		countByWord[word]++
 	}
 	sort.Slice(wordsSet, func(i, j int) bool {
 		left := wordsSet[i]
