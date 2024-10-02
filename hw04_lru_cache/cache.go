@@ -40,8 +40,7 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 		return true
 	} else if isExist {
 		l.queue.Remove(existValue)
-	}
-	if !isExist && l.queue.Len() == l.capacity {
+	} else if l.queue.Len() == l.capacity {
 		lastInQueue := l.queue.Back()
 		delete(l.items, lastInQueue.Value.(lruCacheValue).key)
 		l.queue.Remove(lastInQueue)
