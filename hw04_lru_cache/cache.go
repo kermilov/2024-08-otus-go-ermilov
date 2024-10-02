@@ -41,12 +41,12 @@ func (l *lruCache) Set(key Key, value interface{}) bool {
 	} else if isExist {
 		l.queue.Remove(existValue)
 	}
-	l.items[key] = l.queue.PushFront(lruCacheValue{key, value})
-	if !isExist && l.queue.Len() > l.capacity {
+	if !isExist && l.queue.Len() == l.capacity {
 		lastInQueue := l.queue.Back()
 		delete(l.items, lastInQueue.Value.(lruCacheValue).key)
 		l.queue.Remove(lastInQueue)
 	}
+	l.items[key] = l.queue.PushFront(lruCacheValue{key, value})
 	return isExist
 }
 

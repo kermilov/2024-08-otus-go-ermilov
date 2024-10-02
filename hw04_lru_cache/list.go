@@ -17,13 +17,13 @@ type ListItem struct {
 }
 
 type list struct {
-	listItems map[*ListItem]struct{}
-	front     *ListItem
-	back      *ListItem
+	len   int
+	front *ListItem
+	back  *ListItem
 }
 
 func (l *list) Len() int {
-	return len(l.listItems)
+	return l.len
 }
 
 func (l *list) Front() *ListItem {
@@ -38,16 +38,15 @@ func (l *list) PushFront(v interface{}) *ListItem {
 	result := &ListItem{
 		Value: v,
 	}
-	l.listItems[result] = struct{}{}
+	l.len++
 	front := l.front
 	if front != nil {
 		result.Next = front
 		front.Prev = result
-	}
-	l.front = result
-	if l.back == nil {
+	} else if l.back == nil {
 		l.back = result
 	}
+	l.front = result
 	return result
 }
 
@@ -55,16 +54,15 @@ func (l *list) PushBack(v interface{}) *ListItem {
 	result := &ListItem{
 		Value: v,
 	}
-	l.listItems[result] = struct{}{}
+	l.len++
 	back := l.back
 	if back != nil {
 		result.Prev = back
 		back.Next = result
-	}
-	l.back = result
-	if l.front == nil {
+	} else if l.front == nil {
 		l.front = result
 	}
+	l.back = result
 	return result
 }
 
@@ -73,17 +71,15 @@ func (l *list) Remove(i *ListItem) {
 	prev := i.Prev
 	if next != nil {
 		next.Prev = prev
+	} else if i == l.back {
+		l.back = prev
 	}
 	if prev != nil {
 		prev.Next = next
-	}
-	if i == l.front {
+	} else if i == l.front {
 		l.front = next
 	}
-	if i == l.back {
-		l.back = prev
-	}
-	delete(l.listItems, i)
+	l.len--
 }
 
 func (l *list) MoveToFront(i *ListItem) {
@@ -107,7 +103,5 @@ func (l *list) MoveToFront(i *ListItem) {
 }
 
 func NewList() List {
-	result := new(list)
-	result.listItems = make(map[*ListItem]struct{})
-	return result
+	return new(list)
 }
