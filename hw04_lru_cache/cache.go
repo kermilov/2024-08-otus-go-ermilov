@@ -35,12 +35,13 @@ func (l *lruCache) Get(key Key) (interface{}, bool) {
 
 func (l *lruCache) Set(key Key, value interface{}) bool {
 	existValue, isExist := l.items[key]
-	if isExist && existValue.Value == value {
+	switch {
+	case isExist && existValue.Value == value:
 		l.queue.MoveToFront(existValue)
 		return true
-	} else if isExist {
+	case isExist:
 		l.queue.Remove(existValue)
-	} else if l.queue.Len() == l.capacity {
+	case l.queue.Len() == l.capacity:
 		lastInQueue := l.queue.Back()
 		delete(l.items, lastInQueue.Value.(lruCacheValue).key)
 		l.queue.Remove(lastInQueue)
