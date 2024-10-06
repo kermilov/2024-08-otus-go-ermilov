@@ -24,7 +24,7 @@ func Run(tasks []Task, n, m int) error {
 	return nil
 }
 
-func run(tasks []Task, countErrors *int32, m int) error {
+func run(tasks []Task, countErrors *int32, m int) {
 	wg := sync.WaitGroup{}
 	for _, task := range tasks {
 		wg.Add(1)
@@ -39,5 +39,4 @@ func run(tasks []Task, countErrors *int32, m int) error {
 		}(task)
 	}
 	wg.Wait()
-	return nil
 }
