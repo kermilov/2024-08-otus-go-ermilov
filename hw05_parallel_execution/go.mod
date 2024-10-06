@@ -1,4 +1,4 @@
-module github.com/fixme_my_friend/hw05_parallel_execution
+module github.com/kermilov/2024-08-otus-go-ermilov/hw05_parallel_execution
 
 go 1.22
 
