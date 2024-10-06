@@ -14,7 +14,7 @@ type Task func() error
 func Run(tasks []Task, n, m int) error {
 	var countErrors int32
 	taskCount := len(tasks)
-	for start := 0; start < taskCount; start = start + n {
+	for start := 0; start < taskCount; start += n {
 		end := min(start+n, taskCount)
 		run(tasks[start:end], &countErrors, m)
 		if int(atomic.LoadInt32(&countErrors)) >= m {
