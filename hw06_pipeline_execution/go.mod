@@ -1,4 +1,4 @@
-module github.com/fixme_my_friend/hw06_pipeline_execution
+module github.com/kermilov/2024-08-otus-go-ermilov/hw06_pipeline_execution
 
 go 1.22
 
