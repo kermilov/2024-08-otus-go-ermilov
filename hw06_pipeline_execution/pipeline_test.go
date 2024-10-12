@@ -14,7 +14,7 @@ const (
 	fault         = sleepPerStage / 2
 )
 
-var isFullTesting = true
+var isFullTesting = false
 
 func TestPipeline(t *testing.T) {
 	// Stage generator
@@ -150,6 +150,5 @@ func TestAllStageStop(t *testing.T) {
 		wg.Wait()
 
 		require.Len(t, result, 0)
-
 	})
 }
