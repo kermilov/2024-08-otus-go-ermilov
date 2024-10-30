@@ -15,11 +15,15 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 			outProxy := make(Bi)
 			go func() {
 				defer close(outProxy)
-				for v := range out {
+				for {
 					select {
 					case <-done:
 						return
-					case outProxy <- v:
+					case v, isOk := <-out:
+						if !isOk {
+							return
+						}
+						outProxy <- v
 					}
 				}
 			}()
