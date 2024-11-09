@@ -14,6 +14,14 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 			out := stage(in)
 			outProxy := make(Bi)
 			go func() {
+				defer func() {
+					for range out {
+						_ = out
+					}
+					for range in {
+						_ = in
+					}
+				}()
 				defer close(outProxy)
 				for {
 					select {

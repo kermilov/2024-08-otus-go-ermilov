@@ -14,7 +14,7 @@ const (
 	fault         = sleepPerStage / 2
 )
 
-var isFullTesting = false
+var isFullTesting = true
 
 func TestPipeline(t *testing.T) {
 	// Stage generator
@@ -38,6 +38,56 @@ func TestPipeline(t *testing.T) {
 		g("Adder (+ 100)", func(v interface{}) interface{} { return v.(int) + 100 }),
 		g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) }),
 	}
+
+	t.Run("no data case", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]string, 0, 10)
+		start := time.Now()
+		for s := range ExecutePipeline(in, nil, stages...) {
+			result = append(result, s.(string))
+		}
+		elapsed := time.Since(start)
+
+		require.Equal(t, []string{}, result)
+		require.Less(t,
+			int64(elapsed),
+			// ~0.8s for processing 5 values in 4 stages (100ms every) concurrently
+			int64(sleepPerStage)*int64(len(stages)+len(data)-1)+int64(fault))
+	})
+
+	t.Run("no stages case", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]int, 0, 10)
+		start := time.Now()
+		for s := range ExecutePipeline(in, nil, []Stage{}...) {
+			result = append(result, s.(int))
+		}
+		elapsed := time.Since(start)
+
+		require.Equal(t, data, result)
+		require.Less(t,
+			int64(elapsed),
+			// ~0.8s for processing 5 values in 4 stages (100ms every) concurrently
+			int64(sleepPerStage)*int64(len(stages)+len(data)-1)+int64(fault))
+	})
 
 	t.Run("simple case", func(t *testing.T) {
 		in := make(Bi)
