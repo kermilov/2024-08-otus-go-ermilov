@@ -27,7 +27,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	if limit == 0 {
 		limit = fileFromStat.Size() - offset
 	}
-	copyContent := make([]byte, limit+1)
+	copyContent := make([]byte, limit)
 	n, err := fileFrom.ReadAt(copyContent, offset)
 	if err != nil {
 		if err == io.EOF {
