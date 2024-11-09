@@ -30,7 +30,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	copyContent := make([]byte, limit)
 	n, err := fileFrom.ReadAt(copyContent, offset)
 	if err != nil {
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			copyContent = copyContent[:n]
 		} else {
 			return err
