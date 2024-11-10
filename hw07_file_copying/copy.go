@@ -40,6 +40,9 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	barReader := bar.NewProxyReader(fileFromSectionReader)
 	_, err = io.CopyN(fileTo, barReader, limit)
 	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
 		return err
 	}
 	return nil
