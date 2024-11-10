@@ -4,6 +4,8 @@ import (
 	"errors"
 	"io"
 	"os"
+
+	"github.com/cheggaaa/pb/v3"
 )
 
 var (
@@ -27,21 +29,16 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	if limit == 0 {
 		limit = fileFromStat.Size() - offset
 	}
-	copyContent := make([]byte, limit)
-	n, err := fileFrom.ReadAt(copyContent, offset)
-	if err != nil {
-		if errors.Is(err, io.EOF) {
-			copyContent = copyContent[:n]
-		} else {
-			return err
-		}
-	}
 	fileTo, err := os.Create(toPath)
 	if err != nil {
 		return err
 	}
 	defer fileTo.Close()
-	_, err = fileTo.Write(copyContent)
+	bar := pb.Full.Start64(limit)
+	defer bar.Finish()
+	fileFromSectionReader := io.NewSectionReader(fileFrom, offset, limit)
+	barReader := bar.NewProxyReader(fileFromSectionReader)
+	_, err = io.CopyN(fileTo, barReader, limit)
 	if err != nil {
 		return err
 	}
