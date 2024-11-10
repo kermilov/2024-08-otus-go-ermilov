@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -8,6 +9,18 @@ import (
 )
 
 const toPath = "testdata/out.txt"
+
+func TestErrNotExist(t *testing.T) {
+	err := Copy("testdata/notexists.txt", toPath, 0, 0)
+	require.NotNil(t, err)
+	require.True(t, os.IsNotExist(err))
+}
+
+func TestErrOffsetExceedsFileSize(t *testing.T) {
+	err := Copy("testdata/input.txt", toPath, 1000000000000, 0)
+	require.NotNil(t, err)
+	require.True(t, errors.Is(err, ErrOffsetExceedsFileSize))
+}
 
 func TestCopy(t *testing.T) {
 	tests := []struct {
