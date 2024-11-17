@@ -9,11 +9,15 @@ import (
 )
 
 var (
+	ErrSamePath              = errors.New("fromPath & toPath are the same")
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
+	if fromPath == toPath {
+		return ErrSamePath
+	}
 	fileFrom, err := os.OpenFile(fromPath, os.O_RDONLY, 0)
 	if err != nil {
 		return err
@@ -28,6 +32,9 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 	if limit == 0 {
 		limit = fileFromStat.Size() - offset
+	}
+	if limit > fileFromStat.Size() {
+		limit = fileFromStat.Size()
 	}
 	fileTo, err := os.Create(toPath)
 	if err != nil {

@@ -22,6 +22,12 @@ func TestErrOffsetExceedsFileSize(t *testing.T) {
 	require.True(t, errors.Is(err, ErrOffsetExceedsFileSize))
 }
 
+func TestErrSamePath(t *testing.T) {
+	err := Copy(toPath, toPath, 1000000000000, 0)
+	require.NotNil(t, err)
+	require.True(t, errors.Is(err, ErrSamePath))
+}
+
 func TestCopy(t *testing.T) {
 	tests := []struct {
 		offset           int64
