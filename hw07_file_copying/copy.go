@@ -9,14 +9,17 @@ import (
 )
 
 var (
-	ErrSamePath              = errors.New("fromPath & toPath are the same")
 	ErrUnsupportedFile       = errors.New("unsupported file")
+	ErrToPathAlreadyExists   = errors.New("toPath already exists")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	if fromPath == toPath {
-		return ErrSamePath
+	if isUnknownLengthFile(fromPath) {
+		return ErrUnsupportedFile
+	}
+	if fileExists(toPath) {
+		return ErrToPathAlreadyExists
 	}
 	fileFrom, err := os.OpenFile(fromPath, os.O_RDONLY, 0)
 	if err != nil {
@@ -53,4 +56,20 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return err
 	}
 	return nil
+}
+
+func isUnknownLengthFile(filename string) bool {
+	fi, err := os.Stat(filename)
+	if err != nil {
+		return false
+	}
+	return fi.Size() == 0 && fi.Mode()&os.ModeDevice != 0
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }

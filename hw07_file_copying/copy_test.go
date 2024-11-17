@@ -22,10 +22,10 @@ func TestErrOffsetExceedsFileSize(t *testing.T) {
 	require.True(t, errors.Is(err, ErrOffsetExceedsFileSize))
 }
 
-func TestErrSamePath(t *testing.T) {
-	err := Copy(toPath, toPath, 1000000000000, 0)
+func TestErrToPathAlreadyExists(t *testing.T) {
+	err := Copy(toPath, "testdata/input.txt", 1000000000000, 0)
 	require.NotNil(t, err)
-	require.True(t, errors.Is(err, ErrSamePath))
+	require.True(t, errors.Is(err, ErrToPathAlreadyExists))
 }
 
 func TestCopy(t *testing.T) {
