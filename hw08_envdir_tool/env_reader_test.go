@@ -86,7 +86,7 @@ func TestReadDir(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for name, content := range tt.files {
-				err := os.WriteFile(filepath.Join(tmpDir, name), []byte(content), 0644)
+				err := os.WriteFile(filepath.Join(tmpDir, name), []byte(content), 0o644)
 				require.NoError(t, err)
 			}
 
