@@ -44,13 +44,24 @@ func TestReadDir(t *testing.T) {
 			},
 		},
 		{
-			name: "not ignore second line",
+			name: "not trim leading spaces",
 			files: map[string]string{
 				"FOO": "   foo",
 				"BAR": "baz",
 			},
 			expected: Environment{
 				"FOO": EnvValue{Value: "   foo"},
+				"BAR": EnvValue{Value: "baz"},
+			},
+		},
+		{
+			name: "not ignore line after zero byte",
+			files: map[string]string{
+				"FOO": "   foo" + string([]byte{0x00}) + "with new line",
+				"BAR": "baz",
+			},
+			expected: Environment{
+				"FOO": EnvValue{Value: "   foo\nwith new line"},
 				"BAR": EnvValue{Value: "baz"},
 			},
 		},

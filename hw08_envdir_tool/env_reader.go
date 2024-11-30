@@ -72,11 +72,9 @@ func readFirstLine(file string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
+	data = bytes.Split(data, []byte{'\n'})[0]
 	data = bytes.ReplaceAll(data, []byte{0x00}, []byte{'\n'})
 
 	value := string(data)
-	value = strings.Split(value, "\n")[0]
-	value = strings.TrimRight(value, " ")
-	return value, nil
+	return strings.TrimRight(value, " "), nil
 }
