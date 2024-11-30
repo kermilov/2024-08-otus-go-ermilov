@@ -15,13 +15,12 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	command.Stderr = os.Stderr
 
 	err := command.Run()
-
 	if err != nil {
-		if exitErr := new(exec.ExitError); errors.As(err, &exitErr) {
-			return err.(*exec.ExitError).ExitCode()
-		} else {
-			return 1
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return exitErr.ExitCode()
 		}
+		return 1
 	}
 	return 0
 }
