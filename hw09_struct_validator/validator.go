@@ -4,22 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 )
 
 var (
-	ErrMethodTypeIsNotSupported           = errors.New("method type is not supported")
-	ErrInputIsNotAStruct                  = errors.New("input is not a struct")
-	ErrFieldIsNotSupportedType            = errors.New("field is not supported type")
-	ErrFieldIsNotAString                  = errors.New("field is not a string")
-	ErrFieldHasInvalidLength              = errors.New("field has invalid length")
-	ErrFieldDoesNotMatchRegularExpression = errors.New("field does not match regular expression")
-	ErrFieldIsNotInTheAllowedValues       = errors.New("field is not in the allowed values")
-	ErrFieldIsLessThanTheMinimumValue     = errors.New("field is less than the minimum value")
-	ErrFieldIsNotAInt                     = errors.New("field is not a int")
-	ErrFieldIsGreaterThanTheMaximumValue  = errors.New("field is greater than the maximum value")
+	ErrValidationMethodIsNotSupported = errors.New("validation method is not supported")
+	ErrInputIsNotAStruct              = errors.New("input is not a struct")
+	ErrFieldIsNotSupportedType        = errors.New("field is not supported type")
 )
 
 type ValidationError struct {
@@ -80,12 +72,7 @@ func Validate(v interface{}) error {
 
 func validateFieldOrSlice(fieldName string, value interface{}, tag string) error {
 	v := reflect.ValueOf(value)
-	switch v.Kind() {
-	case reflect.Int:
-		return validateField(tag, v)
-	case reflect.String:
-		return validateField(tag, v)
-	case reflect.Slice:
+	if v.Kind() == reflect.Slice {
 		for i := 0; i < v.Len(); i++ {
 			elem := v.Index(i).Interface()
 			err := validateFieldOrSlice(fieldName+"["+strconv.Itoa(i)+"]", elem, tag)
@@ -93,72 +80,19 @@ func validateFieldOrSlice(fieldName string, value interface{}, tag string) error
 				return err
 			}
 		}
-	default:
-		return ErrFieldIsNotSupportedType
+		return nil
 	}
-
-	return nil
+	return validateField(tag, v)
 }
 
 func validateField(tag string, kind reflect.Value) error {
-	switch {
-	case strings.HasPrefix(tag, "len:"):
-		length, _ := strconv.Atoi(tag[4:])
-		if kind.Kind() != reflect.String {
-			return ErrFieldIsNotAString
-		}
-		if kind.Len() != length {
-			return ErrFieldHasInvalidLength
-		}
-	case strings.HasPrefix(tag, "regexp:"):
-		pattern := tag[7:]
-		if kind.Kind() != reflect.String {
-			return ErrFieldIsNotAString
-		}
-		match, _ := regexp.MatchString(pattern, kind.String())
-		if !match {
-			return ErrFieldDoesNotMatchRegularExpression
-		}
-	case strings.HasPrefix(tag, "in:"):
-		allowed := strings.Split(tag[3:], ",")
-		found := false
-		if kind.Kind() != reflect.String && kind.Kind() != reflect.Int {
-			return ErrFieldIsNotSupportedType
-		}
-		for _, allowVal := range allowed {
-			allowValInt, errAllowValInt := strconv.Atoi(allowVal)
-			if kind.Kind() == reflect.String && kind.String() == allowVal {
-				found = true
-				break
-			} else if kind.Kind() == reflect.Int {
-				if errAllowValInt != nil {
-					return fmt.Errorf("invalid allowed value: %s", allowVal)
-				}
-				if int(kind.Int()) == allowValInt {
-					found = true
-					break
-				}
-			}
-		}
-		if !found {
-			return ErrFieldIsNotInTheAllowedValues
-		}
-	case strings.HasPrefix(tag, "min:"):
-		min, _ := strconv.Atoi(tag[4:])
-		if kind.Kind() != reflect.Int {
-			return ErrFieldIsNotAInt
-		}
-		if int(kind.Int()) < min {
-			return ErrFieldIsLessThanTheMinimumValue
-		}
-	case strings.HasPrefix(tag, "max:"):
-		max, _ := strconv.Atoi(tag[4:])
-		if kind.Kind() != reflect.Int {
-			return ErrFieldIsNotAInt
-		}
-		if int(kind.Int()) > max {
-			return ErrFieldIsGreaterThanTheMaximumValue
-		}
+	tags := strings.Split(tag, ":")
+	validateRegistrar, isOk := validateRegistry[tags[0]]
+	if !isOk {
+		return ErrValidationMethodIsNotSupported
 	}
-	return nil
+	if !validateRegistrar.canValidate(kind.Kind()) {
+		return ErrFieldIsNotSupportedType
+	}
+	return validateRegistrar.validate(tags[1], kind)
 }

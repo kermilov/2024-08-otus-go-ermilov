@@ -84,7 +84,7 @@ func TestSuccessValidate(t *testing.T) {
 		},
 	}
 
-	runTests(tests, t)
+	runTests(t, tests)
 }
 
 func TestErrorsValidate(t *testing.T) {
@@ -155,15 +155,16 @@ func TestErrorsValidate(t *testing.T) {
 		},
 	}
 
-	runTests(tests, t)
+	runTests(t, tests)
 }
 
-func runTests(tests []struct {
+func runTests(t *testing.T, tests []struct {
 	name        string
 	in          interface{}
 	expectedErr error
-}, t *testing.T,
+},
 ) {
+	t.Helper()
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("case %s", tt.name), func(t *testing.T) {
 			t.Parallel()
