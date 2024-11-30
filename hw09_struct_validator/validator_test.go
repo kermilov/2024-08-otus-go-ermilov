@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type UserRole string
@@ -36,25 +38,138 @@ type (
 	}
 )
 
-func TestValidate(t *testing.T) {
+func TestSuccessValidate(t *testing.T) {
 	tests := []struct {
+		name        string
 		in          interface{}
 		expectedErr error
 	}{
 		{
-			// Place your code here.
+			"success User",
+			User{
+				ID:    "123e4567-e89b-12d3-a456-426655440000",
+				Name:  "John Doe",
+				Age:   42,
+				Email: "H2YtY@example.com",
+				Role:  "admin",
+				Phones: []string{
+					"89998723412",
+				},
+			},
+			nil,
 		},
-		// ...
-		// Place your code here.
+		{
+			"success App",
+			App{
+				Version: "1.0.0",
+			},
+			nil,
+		},
+		{
+			"success Token",
+			Token{
+				Header:    []byte("header"),
+				Payload:   []byte("payload"),
+				Signature: []byte("signature"),
+			},
+			nil,
+		},
+		{
+			"success Response",
+			Response{
+				Code: 200,
+				Body: "Body",
+			},
+			nil,
+		},
 	}
 
-	for i, tt := range tests {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			tt := tt
+	runTests(tests, t)
+}
+
+func TestErrorsValidate(t *testing.T) {
+	tests := []struct {
+		name        string
+		in          interface{}
+		expectedErr error
+	}{
+		{
+			"error User",
+			User{
+				ID:    "123e4567-e89b-12d3-a456-42665544000",
+				Name:  "John Doe",
+				Age:   52,
+				Email: "H2YtYexample.com",
+				Role:  "wrong",
+				Phones: []string{
+					"89998723412",
+					"189998723412",
+				},
+			},
+			ValidationErrors{
+				ValidationError{
+					Field: "ID",
+					Err:   ErrFieldHasInvalidLength,
+				},
+				ValidationError{
+					Field: "Age",
+					Err:   ErrFieldIsGreaterThanTheMaximumValue,
+				},
+				ValidationError{
+					Field: "Email",
+					Err:   ErrFieldDoesNotMatchRegularExpression,
+				},
+				ValidationError{
+					Field: "Role",
+					Err:   ErrFieldIsNotInTheAllowedValues,
+				},
+				ValidationError{
+					Field: "Phones",
+					Err:   ErrFieldHasInvalidLength,
+				},
+			},
+		},
+		{
+			"error App",
+			App{
+				Version: "11.0.0",
+			},
+			ValidationErrors{
+				ValidationError{
+					Field: "Version",
+					Err:   ErrFieldHasInvalidLength,
+				},
+			},
+		},
+		{
+			"error Response",
+			Response{
+				Code: 204,
+			},
+			ValidationErrors{
+				ValidationError{
+					Field: "Code",
+					Err:   ErrFieldIsNotInTheAllowedValues,
+				},
+			},
+		},
+	}
+
+	runTests(tests, t)
+}
+
+func runTests(tests []struct {
+	name        string
+	in          interface{}
+	expectedErr error
+}, t *testing.T,
+) {
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("case %s", tt.name), func(t *testing.T) {
 			t.Parallel()
 
-			// Place your code here.
-			_ = tt
+			actualErr := Validate(tt.in)
+			require.Equal(t, tt.expectedErr, actualErr)
 		})
 	}
 }
