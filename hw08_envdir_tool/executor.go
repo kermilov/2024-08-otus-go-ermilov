@@ -22,14 +22,3 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	}
 	return 0
 }
-
-func (env Environment) ToEnv() []string {
-	envList := make([]string, 0, len(env))
-	for name, value := range env {
-		if value.NeedRemove {
-			continue
-		}
-		envList = append(envList, name+"="+value.Value)
-	}
-	return envList
-}

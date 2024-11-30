@@ -33,6 +33,28 @@ func TestReadDir(t *testing.T) {
 			},
 		},
 		{
+			name: "ignore second line",
+			files: map[string]string{
+				"FOO": "bar\nPLEASE IGNORE SECOND LINE",
+				"BAR": "baz",
+			},
+			expected: Environment{
+				"FOO": EnvValue{Value: "bar"},
+				"BAR": EnvValue{Value: "baz"},
+			},
+		},
+		{
+			name: "not ignore second line",
+			files: map[string]string{
+				"FOO": "   foo",
+				"BAR": "baz",
+			},
+			expected: Environment{
+				"FOO": EnvValue{Value: "   foo"},
+				"BAR": EnvValue{Value: "baz"},
+			},
+		},
+		{
 			name: "empty file",
 			files: map[string]string{
 				"FOO": "",
