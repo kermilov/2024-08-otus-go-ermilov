@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	ErrValidationMethodIsNotSupported = errors.New("validation method is not supported")
-	ErrInputIsNotAStruct              = errors.New("input is not a struct")
-	ErrFieldIsNotSupportedType        = errors.New("field is not supported type")
+	ErrValidationInvalid              = errors.New("validation failed")
+	ErrValidationMethodIsNotSupported = fmt.Errorf("%w : validation method is not supported", ErrValidationInvalid)
+	ErrInputIsNotAStruct              = fmt.Errorf("%w : input is not a struct", ErrValidationInvalid)
+	ErrFieldIsNotSupportedType        = fmt.Errorf("%w : field is not supported type", ErrValidationInvalid)
 )
 
 type ValidationError struct {
@@ -58,7 +59,11 @@ func Validate(v interface{}) error {
 		for _, t := range tags {
 			err := validateFieldOrSlice(field.Name, value.Interface(), t)
 			if err != nil {
-				validationErrors = append(validationErrors, ValidationError{Field: field.Name, Err: err})
+				if errors.Is(err, ErrValidationFailed) {
+					validationErrors = append(validationErrors, ValidationError{Field: field.Name, Err: err})
+				} else {
+					return err
+				}
 			}
 		}
 	}

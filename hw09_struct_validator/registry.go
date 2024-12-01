@@ -10,11 +10,12 @@ import (
 )
 
 var (
-	ErrFieldHasInvalidLength              = errors.New("field has invalid length")
-	ErrFieldDoesNotMatchRegularExpression = errors.New("field does not match regular expression")
-	ErrFieldIsNotInTheAllowedValues       = errors.New("field is not in the allowed values")
-	ErrFieldIsLessThanTheMinimumValue     = errors.New("field is less than the minimum value")
-	ErrFieldIsGreaterThanTheMaximumValue  = errors.New("field is greater than the maximum value")
+	ErrValidationFailed                   = errors.New("validation failed")
+	ErrFieldHasInvalidLength              = fmt.Errorf("%w : field has invalid length", ErrValidationFailed)
+	ErrFieldDoesNotMatchRegularExpression = fmt.Errorf("%w : field does not match regular expression", ErrValidationFailed)
+	ErrFieldIsNotInTheAllowedValues       = fmt.Errorf("%w : field is not in the allowed values", ErrValidationFailed)
+	ErrFieldIsLessThanTheMinimumValue     = fmt.Errorf("%w : field is less than the minimum value", ErrValidationFailed)
+	ErrFieldIsGreaterThanTheMaximumValue  = fmt.Errorf("%w : field is greater than the maximum value", ErrValidationFailed)
 )
 
 type validateRegistrar struct {
@@ -55,7 +56,10 @@ var validateRegistry = map[string]validateRegistrar{
 }
 
 func lenValidate(s string, kind reflect.Value) error {
-	length, _ := strconv.Atoi(s)
+	length, err := strconv.Atoi(s)
+	if err != nil {
+		return fmt.Errorf("invalid length: %s", s)
+	}
 	if kind.Len() != length {
 		return ErrFieldHasInvalidLength
 	}
@@ -63,7 +67,10 @@ func lenValidate(s string, kind reflect.Value) error {
 }
 
 func regexpValidate(s string, kind reflect.Value) error {
-	match, _ := regexp.MatchString(s, kind.String())
+	match, err := regexp.MatchString(s, kind.String())
+	if err != nil {
+		return fmt.Errorf("invalid regular expression: %s", s)
+	}
 	if !match {
 		return ErrFieldDoesNotMatchRegularExpression
 	}
@@ -89,7 +96,10 @@ func inValidate(s string, kind reflect.Value) error {
 }
 
 func minValidate(s string, kind reflect.Value) error {
-	minValue, _ := strconv.Atoi(s)
+	minValue, err := strconv.Atoi(s)
+	if err != nil {
+		return fmt.Errorf("invalid minimum value: %s", s)
+	}
 	if int(kind.Int()) < minValue {
 		return ErrFieldIsLessThanTheMinimumValue
 	}
@@ -97,7 +107,10 @@ func minValidate(s string, kind reflect.Value) error {
 }
 
 func maxValidate(s string, kind reflect.Value) error {
-	maxValue, _ := strconv.Atoi(s)
+	maxValue, err := strconv.Atoi(s)
+	if err != nil {
+		return fmt.Errorf("invalid maximum value: %s", s)
+	}
 	if int(kind.Int()) > maxValue {
 		return ErrFieldIsGreaterThanTheMaximumValue
 	}
