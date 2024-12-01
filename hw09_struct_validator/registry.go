@@ -72,26 +72,20 @@ func regexpValidate(s string, kind reflect.Value) error {
 
 func inValidate(s string, kind reflect.Value) error {
 	allowed := strings.Split(s, ",")
-	found := false
 	for _, allowVal := range allowed {
-		allowValInt, errAllowValInt := strconv.Atoi(allowVal)
 		if kind.Kind() == reflect.String && kind.String() == allowVal {
-			found = true
-			break
+			return nil
 		} else if kind.Kind() == reflect.Int {
+			allowValInt, errAllowValInt := strconv.Atoi(allowVal)
 			if errAllowValInt != nil {
 				return fmt.Errorf("invalid allowed value: %s", allowVal)
 			}
 			if int(kind.Int()) == allowValInt {
-				found = true
-				break
+				return nil
 			}
 		}
 	}
-	if !found {
-		return ErrFieldIsNotInTheAllowedValues
-	}
-	return nil
+	return ErrFieldIsNotInTheAllowedValues
 }
 
 func minValidate(s string, kind reflect.Value) error {
