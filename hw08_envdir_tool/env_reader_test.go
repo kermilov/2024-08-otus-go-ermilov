@@ -55,6 +55,28 @@ func TestReadDir(t *testing.T) {
 			},
 		},
 		{
+			name: "trim trailing spaces",
+			files: map[string]string{
+				"FOO": "   foo  ",
+				"BAR": "baz",
+			},
+			expected: Environment{
+				"FOO": EnvValue{Value: "   foo"},
+				"BAR": EnvValue{Value: "baz"},
+			},
+		},
+		{
+			name: "trim trailing tab",
+			files: map[string]string{
+				"FOO": "   foo\t",
+				"BAR": "baz",
+			},
+			expected: Environment{
+				"FOO": EnvValue{Value: "   foo"},
+				"BAR": EnvValue{Value: "baz"},
+			},
+		},
+		{
 			name: "not ignore line after zero byte",
 			files: map[string]string{
 				"FOO": "   foo" + string([]byte{0x00}) + "with new line",

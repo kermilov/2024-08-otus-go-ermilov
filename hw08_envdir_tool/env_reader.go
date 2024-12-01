@@ -76,5 +76,12 @@ func readFirstLine(file string) (string, error) {
 	data = bytes.ReplaceAll(data, []byte{0x00}, []byte{'\n'})
 
 	value := string(data)
-	return strings.TrimRight(value, " "), nil
+	return trimRight(value, " ", "\t"), nil
+}
+
+func trimRight(s string, cutsets ...string) string {
+	for _, cutset := range cutsets {
+		s = strings.TrimRight(s, cutset)
+	}
+	return s
 }
