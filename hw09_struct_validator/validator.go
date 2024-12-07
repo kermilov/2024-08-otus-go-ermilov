@@ -57,8 +57,13 @@ func Validate(v interface{}) error {
 		v := reflect.ValueOf(value.Interface())
 
 		tags := strings.Split(tag, "|")
-		for _, t := range tags {
-			err := validateFieldOrSlice(field.Name, v, t)
+		for _, tag := range tags {
+			split := strings.Split(tag, ":")
+			validateRegistrar, isOk := validateRegistry[split[0]]
+			if !isOk {
+				return ErrValidationMethodIsNotSupported
+			}
+			err := validateField(validateRegistrar, field.Name, v, split)
 			if err != nil {
 				if errors.Is(err, ErrValidationFailed) {
 					validationErrors = append(validationErrors, ValidationError{Field: field.Name, Err: err})
@@ -76,28 +81,23 @@ func Validate(v interface{}) error {
 	return nil
 }
 
-func validateFieldOrSlice(fieldName string, v reflect.Value, tag string) error {
+func validateField(validateRegistrar validateRegistrar, fieldName string, v reflect.Value, tag []string) error {
 	if v.Kind() == reflect.Slice {
+		x := v.Type().Elem().Kind()
+		if !validateRegistrar.canValidate(x) {
+			return ErrFieldIsNotSupportedType
+		}
 		for i := 0; i < v.Len(); i++ {
 			elem := v.Index(i).Interface()
-			err := validateFieldOrSlice(fieldName+"["+strconv.Itoa(i)+"]", reflect.ValueOf(elem), tag)
+			err := validateField(validateRegistrar, fieldName+"["+strconv.Itoa(i)+"]", reflect.ValueOf(elem), tag)
 			if err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	return validateField(tag, v)
-}
-
-func validateField(tag string, kind reflect.Value) error {
-	tags := strings.Split(tag, ":")
-	validateRegistrar, isOk := validateRegistry[tags[0]]
-	if !isOk {
-		return ErrValidationMethodIsNotSupported
-	}
-	if !validateRegistrar.canValidate(kind.Kind()) {
+	if !validateRegistrar.canValidate(v.Kind()) {
 		return ErrFieldIsNotSupportedType
 	}
-	return validateRegistrar.validate(tags[1], kind)
+	return validateRegistrar.validate(tag[1], v)
 }
