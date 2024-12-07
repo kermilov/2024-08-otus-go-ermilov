@@ -48,16 +48,17 @@ func Validate(v interface{}) error {
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
-		value := val.Field(i)
 		tag := field.Tag.Get("validate")
 
 		if tag == "" {
 			continue
 		}
+		value := val.Field(i)
+		v := reflect.ValueOf(value.Interface())
 
 		tags := strings.Split(tag, "|")
 		for _, t := range tags {
-			err := validateFieldOrSlice(field.Name, value.Interface(), t)
+			err := validateFieldOrSlice(field.Name, v, t)
 			if err != nil {
 				if errors.Is(err, ErrValidationFailed) {
 					validationErrors = append(validationErrors, ValidationError{Field: field.Name, Err: err})
@@ -75,12 +76,11 @@ func Validate(v interface{}) error {
 	return nil
 }
 
-func validateFieldOrSlice(fieldName string, value interface{}, tag string) error {
-	v := reflect.ValueOf(value)
+func validateFieldOrSlice(fieldName string, v reflect.Value, tag string) error {
 	if v.Kind() == reflect.Slice {
 		for i := 0; i < v.Len(); i++ {
 			elem := v.Index(i).Interface()
-			err := validateFieldOrSlice(fieldName+"["+strconv.Itoa(i)+"]", elem, tag)
+			err := validateFieldOrSlice(fieldName+"["+strconv.Itoa(i)+"]", reflect.ValueOf(elem), tag)
 			if err != nil {
 				return err
 			}
