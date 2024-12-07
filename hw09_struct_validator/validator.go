@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 )
 
@@ -54,16 +53,15 @@ func Validate(v interface{}) error {
 			continue
 		}
 		value := val.Field(i)
-		v := reflect.ValueOf(value.Interface())
 
-		tags := strings.Split(tag, "|")
-		for _, tag := range tags {
-			split := strings.Split(tag, ":")
-			validateRegistrar, isOk := validateRegistry[split[0]]
+		conditions := strings.Split(tag, "|")
+		for _, condition := range conditions {
+			split := strings.Split(condition, ":")
+			validator, isOk := validateRegistry[split[0]]
 			if !isOk {
 				return ErrValidationMethodIsNotSupported
 			}
-			err := validateField(validateRegistrar, field.Name, v, split)
+			err := validateField(validator, value, split[1])
 			if err != nil {
 				if errors.Is(err, ErrValidationFailed) {
 					validationErrors = append(validationErrors, ValidationError{Field: field.Name, Err: err})
@@ -81,23 +79,23 @@ func Validate(v interface{}) error {
 	return nil
 }
 
-func validateField(validateRegistrar validateRegistrar, fieldName string, v reflect.Value, tag []string) error {
-	if v.Kind() == reflect.Slice {
-		x := v.Type().Elem().Kind()
-		if !validateRegistrar.canValidate(x) {
+func validateField(validator validateRegistrar, value reflect.Value, s string) error {
+	if value.Kind() == reflect.Slice {
+		sliceKind := value.Type().Elem().Kind()
+		if !validator.canValidate(sliceKind) {
 			return ErrFieldIsNotSupportedType
 		}
-		for i := 0; i < v.Len(); i++ {
-			elem := v.Index(i).Interface()
-			err := validateField(validateRegistrar, fieldName+"["+strconv.Itoa(i)+"]", reflect.ValueOf(elem), tag)
+		for i := 0; i < value.Len(); i++ {
+			elem := value.Index(i).Interface()
+			err := validateField(validator, reflect.ValueOf(elem), s)
 			if err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	if !validateRegistrar.canValidate(v.Kind()) {
+	if !validator.canValidate(value.Kind()) {
 		return ErrFieldIsNotSupportedType
 	}
-	return validateRegistrar.validate(tag[1], v)
+	return validator.validate(s, value)
 }
