@@ -15,6 +15,7 @@ linters-settings:
           - $gostd
           - github.com/stretchr/testify/require
           - github.com/cheggaaa/pb/v3
+          - github.com/google/uuid
 issues:
   exclude-rules:
     - path: _test\.go
