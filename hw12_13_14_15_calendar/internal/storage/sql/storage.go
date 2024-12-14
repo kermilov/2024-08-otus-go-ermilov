@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage"
+	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/migrations"
+	"github.com/pressly/goose/v3"
 )
 
 type Storage struct {
@@ -22,6 +24,15 @@ func New(dsn string) *Storage {
 	db, err := sql.Open("pgx", dsn) // *sql.DB
 	if err != nil {
 		panic(fmt.Errorf("не удалось установить первоначальное соединение с базой данных: %w", err))
+	}
+
+	goose.SetBaseFS(migrations.EmbedMigrations)
+	if err := goose.SetDialect("postgres"); err != nil {
+		panic(err)
+	}
+
+	if err := goose.Up(db, "."); err != nil {
+		panic(err)
 	}
 	return &Storage{db: db}
 }
@@ -186,7 +197,7 @@ func (s *Storage) rowToEvent(row *sql.Row) (storage.Event, error) {
 	}
 	event.Duration, err = parsePostgresInterval(duration)
 	if err != nil {
-		return storage.Event{}, fmt.Errorf("не удалось сканировать событие: %w", err)
+		return storage.Event{}, fmt.Errorf("не удалось преобразовать duration: %w", err)
 	}
 	return event, nil
 }
