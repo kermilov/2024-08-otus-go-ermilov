@@ -1,7 +1,12 @@
 package logger
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
 
 func TestLogger(t *testing.T) {
-	// TODO
+	require.NotNil(t, New("INFO"))
+	require.Panics(t, func() { New("PANIC") })
 }
