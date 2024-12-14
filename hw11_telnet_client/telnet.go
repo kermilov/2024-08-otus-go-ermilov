@@ -4,8 +4,6 @@ import (
 	"context"
 	"io"
 	"net"
-	"os"
-	"os/signal"
 	"time"
 )
 
@@ -34,9 +32,7 @@ func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, ou
 }
 
 func (c *client) Connect() error {
-	notifyContext, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
-	ctx, cancel := context.WithTimeout(notifyContext, c.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 	dialer := &net.Dialer{}
 	conn, err := dialer.DialContext(ctx, "tcp", c.address)

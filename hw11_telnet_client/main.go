@@ -7,7 +7,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"sync"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -32,18 +33,13 @@ func main() {
 
 	fmt.Fprintln(os.Stderr, "Установлено соединение", address)
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
 	go func() {
-		defer wg.Done()
 		if err := client.Send(); err != nil {
 			log.Println(err)
 		}
 	}()
 
 	go func() {
-		defer wg.Done()
 		if err := client.Receive(); err != nil {
 			var netErr net.Error
 			if errors.As(err, &netErr) && netErr.Timeout() {
@@ -54,7 +50,9 @@ func main() {
 		}
 	}()
 
-	wg.Wait()
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
 
 	if err := client.Close(); err != nil {
 		log.Println(err)
