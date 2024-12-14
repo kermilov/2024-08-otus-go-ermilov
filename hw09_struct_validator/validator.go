@@ -61,7 +61,11 @@ func Validate(v interface{}) error {
 			if !isOk {
 				return ErrValidationMethodIsNotSupported
 			}
-			err := validateField(validator, value, split[1])
+			parse, errParse := validator.parse(split[1])
+			if errParse != nil {
+				return errParse
+			}
+			err := validateField(validator, value, parse)
 			if err != nil {
 				if errors.Is(err, ErrValidationFailed) {
 					validationErrors = append(validationErrors, ValidationError{Field: field.Name, Err: err})
@@ -79,7 +83,7 @@ func Validate(v interface{}) error {
 	return nil
 }
 
-func validateField(validator validateRegistrar, value reflect.Value, s string) error {
+func validateField(validator validateRegistrar, value reflect.Value, parse interface{}) error {
 	if value.Kind() == reflect.Slice {
 		sliceKind := value.Type().Elem().Kind()
 		if !validator.canValidate(sliceKind) {
@@ -87,7 +91,7 @@ func validateField(validator validateRegistrar, value reflect.Value, s string) e
 		}
 		for i := 0; i < value.Len(); i++ {
 			elem := value.Index(i).Interface()
-			err := validateField(validator, reflect.ValueOf(elem), s)
+			err := validateField(validator, reflect.ValueOf(elem), parse)
 			if err != nil {
 				return err
 			}
@@ -97,5 +101,5 @@ func validateField(validator validateRegistrar, value reflect.Value, s string) e
 	if !validator.canValidate(value.Kind()) {
 		return ErrFieldIsNotSupportedType
 	}
-	return validator.validate(s, value)
+	return validator.validate(parse, value)
 }

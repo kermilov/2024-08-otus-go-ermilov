@@ -20,7 +20,8 @@ var (
 
 type validateRegistrar struct {
 	kinds    []reflect.Kind
-	validate func(string, reflect.Value) error
+	parse    func(string) (interface{}, error)
+	validate func(interface{}, reflect.Value) error
 }
 
 func (v validateRegistrar) canValidate(kind reflect.Kind) bool {
@@ -35,51 +36,59 @@ func (v validateRegistrar) canValidate(kind reflect.Kind) bool {
 var validateRegistry = map[string]validateRegistrar{
 	"len": {
 		kinds:    []reflect.Kind{reflect.String},
+		parse:    lenParse,
 		validate: lenValidate,
 	},
 	"regexp": {
 		kinds:    []reflect.Kind{reflect.String},
+		parse:    regexpParse,
 		validate: regexpValidate,
 	},
 	"in": {
 		kinds:    []reflect.Kind{reflect.String, reflect.Int},
+		parse:    inParse,
 		validate: inValidate,
 	},
 	"min": {
 		kinds:    []reflect.Kind{reflect.Int},
+		parse:    minParse,
 		validate: minValidate,
 	},
 	"max": {
 		kinds:    []reflect.Kind{reflect.Int},
+		parse:    maxParse,
 		validate: maxValidate,
 	},
 }
 
-func lenValidate(s string, kind reflect.Value) error {
-	length, err := strconv.Atoi(s)
-	if err != nil {
-		return fmt.Errorf("invalid length: %s", s)
-	}
-	if kind.Len() != length {
+func lenParse(s string) (interface{}, error) {
+	return strconv.Atoi(s)
+}
+
+func lenValidate(length interface{}, kind reflect.Value) error {
+	if kind.Len() != length.(int) {
 		return ErrFieldHasInvalidLength
 	}
 	return nil
 }
 
-func regexpValidate(s string, kind reflect.Value) error {
-	match, err := regexp.MatchString(s, kind.String())
-	if err != nil {
-		return fmt.Errorf("invalid regular expression: %s", s)
-	}
-	if !match {
+func regexpParse(s string) (interface{}, error) {
+	return regexp.Compile(s)
+}
+
+func regexpValidate(regExp interface{}, kind reflect.Value) error {
+	if !regExp.(*regexp.Regexp).MatchString(kind.String()) {
 		return ErrFieldDoesNotMatchRegularExpression
 	}
 	return nil
 }
 
-func inValidate(s string, kind reflect.Value) error {
-	allowed := strings.Split(s, ",")
-	for _, allowVal := range allowed {
+func inParse(s string) (interface{}, error) {
+	return strings.Split(s, ","), nil
+}
+
+func inValidate(allowed interface{}, kind reflect.Value) error {
+	for _, allowVal := range allowed.([]string) {
 		if kind.Kind() == reflect.String && kind.String() == allowVal {
 			return nil
 		} else if kind.Kind() == reflect.Int {
@@ -95,23 +104,23 @@ func inValidate(s string, kind reflect.Value) error {
 	return ErrFieldIsNotInTheAllowedValues
 }
 
-func minValidate(s string, kind reflect.Value) error {
-	minValue, err := strconv.Atoi(s)
-	if err != nil {
-		return fmt.Errorf("invalid minimum value: %s", s)
-	}
-	if int(kind.Int()) < minValue {
+func minParse(s string) (interface{}, error) {
+	return strconv.Atoi(s)
+}
+
+func minValidate(minValue interface{}, kind reflect.Value) error {
+	if int(kind.Int()) < minValue.(int) {
 		return ErrFieldIsLessThanTheMinimumValue
 	}
 	return nil
 }
 
-func maxValidate(s string, kind reflect.Value) error {
-	maxValue, err := strconv.Atoi(s)
-	if err != nil {
-		return fmt.Errorf("invalid maximum value: %s", s)
-	}
-	if int(kind.Int()) > maxValue {
+func maxParse(s string) (interface{}, error) {
+	return strconv.Atoi(s)
+}
+
+func maxValidate(maxValue interface{}, kind reflect.Value) error {
+	if int(kind.Int()) > maxValue.(int) {
 		return ErrFieldIsGreaterThanTheMaximumValue
 	}
 	return nil
