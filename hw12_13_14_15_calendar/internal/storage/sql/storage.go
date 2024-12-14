@@ -53,8 +53,7 @@ const (
 )
 
 // Создать (событие).
-func (s *Storage) Create(event storage.Event) (storage.Event, error) {
-	ctx := context.Background()
+func (s *Storage) Create(ctx context.Context, event storage.Event) (storage.Event, error) {
 	err := s.Connect(ctx)
 	if err != nil {
 		return storage.Event{}, err
@@ -73,8 +72,7 @@ func (s *Storage) Create(event storage.Event) (storage.Event, error) {
 }
 
 // Обновить (ID события, событие).
-func (s *Storage) Update(id string, event storage.Event) error {
-	ctx := context.Background()
+func (s *Storage) Update(ctx context.Context, id string, event storage.Event) error {
 	err := s.Connect(ctx)
 	if err != nil {
 		return err
@@ -90,8 +88,7 @@ func (s *Storage) Update(id string, event storage.Event) error {
 }
 
 // Удалить (ID события).
-func (s *Storage) Delete(id string) error {
-	ctx := context.Background()
+func (s *Storage) Delete(ctx context.Context, id string) error {
 	err := s.Connect(ctx)
 	if err != nil {
 		return err
@@ -105,8 +102,7 @@ func (s *Storage) Delete(id string) error {
 }
 
 // СписокСобытийНаДень (дата).
-func (s *Storage) FindByDay(date time.Time) ([]storage.Event, error) {
-	ctx := context.Background()
+func (s *Storage) FindByDay(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	err := s.Connect(ctx)
 	if err != nil {
 		return nil, err
@@ -118,8 +114,7 @@ func (s *Storage) FindByDay(date time.Time) ([]storage.Event, error) {
 }
 
 // СписокСобытийНаНеделю (дата начала недели).
-func (s *Storage) FindByWeek(date time.Time) ([]storage.Event, error) {
-	ctx := context.Background()
+func (s *Storage) FindByWeek(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	err := s.Connect(ctx)
 	if err != nil {
 		return nil, err
@@ -131,8 +126,7 @@ func (s *Storage) FindByWeek(date time.Time) ([]storage.Event, error) {
 }
 
 // СписокСобытийНaМесяц (дата начала месяца).
-func (s *Storage) FindByMonth(date time.Time) ([]storage.Event, error) {
-	ctx := context.Background()
+func (s *Storage) FindByMonth(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	err := s.Connect(ctx)
 	if err != nil {
 		return nil, err
@@ -144,8 +138,7 @@ func (s *Storage) FindByMonth(date time.Time) ([]storage.Event, error) {
 }
 
 // пр. на усмотрение разработчика.
-func (s *Storage) FindByID(id string) (storage.Event, error) {
-	ctx := context.Background()
+func (s *Storage) FindByID(ctx context.Context, id string) (storage.Event, error) {
 	err := s.Connect(ctx)
 	if err != nil {
 		return storage.Event{}, err

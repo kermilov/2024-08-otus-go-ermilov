@@ -15,19 +15,19 @@ type Logger interface { // TODO
 
 type Storage interface {
 	// Создать (событие);
-	Create(event storage.Event) (storage.Event, error)
+	Create(ctx context.Context, event storage.Event) (storage.Event, error)
 	// Обновить (ID события, событие);
-	Update(id string, event storage.Event) error
+	Update(ctx context.Context, id string, event storage.Event) error
 	// Удалить (ID события);
-	Delete(id string) error
+	Delete(ctx context.Context, id string) error
 	// СписокСобытийНаДень (дата);
-	FindByDay(date time.Time) ([]storage.Event, error)
+	FindByDay(ctx context.Context, date time.Time) ([]storage.Event, error)
 	// СписокСобытийНаНеделю (дата начала недели);
-	FindByWeek(date time.Time) ([]storage.Event, error)
+	FindByWeek(ctx context.Context, date time.Time) ([]storage.Event, error)
 	// СписокСобытийНaМесяц (дата начала месяца).
-	FindByMonth(date time.Time) ([]storage.Event, error)
+	FindByMonth(ctx context.Context, date time.Time) ([]storage.Event, error)
 	// пр. на усмотрение разработчика.
-	FindByID(id string) (storage.Event, error)
+	FindByID(ctx context.Context, id string) (storage.Event, error)
 }
 
 func New(logger Logger, storage Storage) *App {

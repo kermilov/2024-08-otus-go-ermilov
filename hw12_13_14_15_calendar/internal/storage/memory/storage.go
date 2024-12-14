@@ -1,6 +1,7 @@
 package memorystorage
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -18,7 +19,7 @@ func New() *Storage {
 }
 
 // Создать (событие).
-func (s *Storage) Create(event storage.Event) (storage.Event, error) {
+func (s *Storage) Create(ctx context.Context, event storage.Event) (storage.Event, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if event.ID == "" {
@@ -29,7 +30,7 @@ func (s *Storage) Create(event storage.Event) (storage.Event, error) {
 }
 
 // Обновить (ID события, событие).
-func (s *Storage) Update(id string, event storage.Event) error {
+func (s *Storage) Update(ctx context.Context, id string, event storage.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.storage[id] = event
@@ -37,7 +38,7 @@ func (s *Storage) Update(id string, event storage.Event) error {
 }
 
 // Удалить (ID события).
-func (s *Storage) Delete(id string) error {
+func (s *Storage) Delete(ctx context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.storage, id)
@@ -45,28 +46,28 @@ func (s *Storage) Delete(id string) error {
 }
 
 // СписокСобытийНаДень (дата).
-func (s *Storage) FindByDay(date time.Time) ([]storage.Event, error) {
+func (s *Storage) FindByDay(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	startOfDay := storage.GetStartOfDay(date)
 	endOfDay := storage.GetEndOfDay(date)
-	return s.findByDateTimeBetween(startOfDay, endOfDay)
+	return s.findByDateTimeBetween(ctx, startOfDay, endOfDay)
 }
 
 // СписокСобытийНаНеделю (дата начала недели).
-func (s *Storage) FindByWeek(date time.Time) ([]storage.Event, error) {
+func (s *Storage) FindByWeek(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	startOfWeek := storage.GetStartOfWeek(date)
 	endOfWeek := storage.GetEndOfWeek(date)
-	return s.findByDateTimeBetween(startOfWeek, endOfWeek)
+	return s.findByDateTimeBetween(ctx, startOfWeek, endOfWeek)
 }
 
 // СписокСобытийНaМесяц (дата начала месяца).
-func (s *Storage) FindByMonth(date time.Time) ([]storage.Event, error) {
+func (s *Storage) FindByMonth(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	startOfMonth := storage.GetStartOfMonth(date)
 	endOfMonth := storage.GetEndOfMonth(date)
-	return s.findByDateTimeBetween(startOfMonth, endOfMonth)
+	return s.findByDateTimeBetween(ctx, startOfMonth, endOfMonth)
 }
 
 // пр. на усмотрение разработчика.
-func (s *Storage) FindByID(id string) (storage.Event, error) {
+func (s *Storage) FindByID(ctx context.Context, id string) (storage.Event, error) {
 	result, isOk := s.storage[id]
 	if !isOk {
 		return storage.Event{}, storage.ErrEventNotFound
@@ -74,7 +75,7 @@ func (s *Storage) FindByID(id string) (storage.Event, error) {
 	return result, nil
 }
 
-func (s *Storage) findByDateTimeBetween(startDate time.Time, endDate time.Time) ([]storage.Event, error) {
+func (s *Storage) findByDateTimeBetween(ctx context.Context, startDate time.Time, endDate time.Time) ([]storage.Event, error) {
 	result := make([]storage.Event, 0)
 	for _, v := range s.storage {
 		if (v.DateTime.Compare(startDate) >= 0) && (v.DateTime.Compare(endDate) <= 0) {
