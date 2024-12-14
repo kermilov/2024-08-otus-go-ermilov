@@ -39,6 +39,7 @@ func main() {
 		}
 	}()
 
+	endReceive := make(chan struct{}, 1)
 	go func() {
 		if err := client.Receive(); err != nil {
 			var netErr net.Error
@@ -48,11 +49,17 @@ func main() {
 				fmt.Fprintln(os.Stderr, "Соединение было закрыто")
 			}
 		}
+		endReceive <- struct{}{}
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	select {
+	case <-endReceive:
+		fmt.Fprintln(os.Stderr, "Соединение было закрыто пользователем")
+	case <-quit:
+		fmt.Fprintln(os.Stderr, "Соединение было закрыто операционной системой")
+	}
 
 	if err := client.Close(); err != nil {
 		log.Println(err)
