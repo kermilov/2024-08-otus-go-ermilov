@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	_ "github.com/jackc/pgx/stdlib"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/app"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
@@ -31,7 +34,7 @@ func main() {
 	config := NewConfig()
 	logg := logger.New(config.Logger.Level)
 
-	storage := memorystorage.New()
+	storage := getStorage(config)
 	calendar := app.New(logg, storage)
 
 	server := internalhttp.NewServer(logg, calendar)
@@ -57,5 +60,19 @@ func main() {
 		logg.Error("failed to start http server: " + err.Error())
 		cancel()
 		os.Exit(1) //nolint:gocritic
+	}
+}
+
+func getStorage(config Config) app.Storage {
+	switch config.Storage {
+	case InMemoryStorage:
+		return memorystorage.New()
+	case SQLStorage:
+		db := config.DB
+		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable search_path=%s",
+			db.Host, db.Port, db.User, db.Password, db.Name, db.Schema)
+		return sqlstorage.New(dsn)
+	default:
+		panic(fmt.Errorf("неизвестный тип хранения: %s", config.Storage))
 	}
 }
