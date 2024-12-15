@@ -2,6 +2,7 @@ package memorystorage
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -60,6 +61,10 @@ func TestStorage(t *testing.T) {
 	require.NotNil(t, event1)
 	require.Equal(t, "1", event1.ID)
 	require.Equal(t, "update", event1.Title)
+
+	_, err = tested.Create(context.Background(), storage.Event{ID: "2", Title: "checkDateBusy", DateTime: now})
+	require.NotNil(t, err)
+	require.True(t, errors.Is(err, storage.ErrDateBusy))
 
 	err = tested.Update(context.Background(), "1", storage.Event{ID: "1", Title: "update", DateTime: now.Add(-storage.Day)})
 	require.Nil(t, err)

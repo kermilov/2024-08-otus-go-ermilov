@@ -22,6 +22,10 @@ func New() *Storage {
 func (s *Storage) Create(ctx context.Context, event storage.Event) (storage.Event, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	err := s.checkDateBusy(ctx, event)
+	if err != nil {
+		return storage.Event{}, err
+	}
 	if event.ID == "" {
 		event.ID = uuid.New().String()
 	}
@@ -33,12 +37,16 @@ func (s *Storage) Create(ctx context.Context, event storage.Event) (storage.Even
 func (s *Storage) Update(ctx context.Context, id string, event storage.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	err := s.checkDateBusy(ctx, event)
+	if err != nil {
+		return err
+	}
 	s.storage[id] = event
 	return nil
 }
 
 // Удалить (ID события).
-func (s *Storage) Delete(ctx context.Context, id string) error {
+func (s *Storage) Delete(_ context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.storage, id)
@@ -67,7 +75,7 @@ func (s *Storage) FindByMonth(ctx context.Context, date time.Time) ([]storage.Ev
 }
 
 // пр. на усмотрение разработчика.
-func (s *Storage) FindByID(ctx context.Context, id string) (storage.Event, error) {
+func (s *Storage) FindByID(_ context.Context, id string) (storage.Event, error) {
 	result, isOk := s.storage[id]
 	if !isOk {
 		return storage.Event{}, storage.ErrEventNotFound
@@ -75,7 +83,23 @@ func (s *Storage) FindByID(ctx context.Context, id string) (storage.Event, error
 	return result, nil
 }
 
-func (s *Storage) findByDateTimeBetween(ctx context.Context, startDate time.Time, endDate time.Time) ([]storage.Event, error) {
+func (s *Storage) checkDateBusy(_ context.Context, event storage.Event) error {
+	for _, v := range s.storage {
+		if (v.DateTime.Compare(event.DateTime) >= 0) &&
+			(v.DateTime.Add(v.Duration).Compare(event.DateTime) <= 0) {
+			return storage.ErrDateBusy
+		}
+		if (v.DateTime.Compare(event.DateTime.Add(event.Duration)) >= 0) &&
+			(v.DateTime.Add(v.Duration).Compare(event.DateTime.Add(event.Duration)) <= 0) {
+			return storage.ErrDateBusy
+		}
+	}
+	return nil
+}
+
+func (s *Storage) findByDateTimeBetween(_ context.Context, startDate time.Time, endDate time.Time) (
+	[]storage.Event, error,
+) {
 	result := make([]storage.Event, 0)
 	for _, v := range s.storage {
 		if (v.DateTime.Compare(startDate) >= 0) && (v.DateTime.Compare(endDate) <= 0) {

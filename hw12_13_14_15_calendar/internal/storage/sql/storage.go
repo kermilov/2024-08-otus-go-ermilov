@@ -55,6 +55,8 @@ func (s *Storage) Close(_ context.Context) error {
 }
 
 const (
+	checkDateBusyQuery = `select 1 from calendar.event where $1 between datetime and datetime + duration 
+	or ($1::timestamp + $2::interval) between datetime and datetime + duration`
 	insertQuery = `insert into event (id, title, datetime, duration, userid) 
 	               values ($1, $2, $3, $4, $5) returning id, title, datetime, duration, userid`
 	updateQuery                = `update event set title = $1, datetime = $2, duration = $3, userid = $4 where id = $5`
@@ -70,6 +72,10 @@ func (s *Storage) Create(ctx context.Context, event storage.Event) (storage.Even
 		return storage.Event{}, err
 	}
 	defer s.Close(ctx)
+	err = s.checkDateBusy(ctx, event)
+	if err != nil {
+		return storage.Event{}, err
+	}
 	if event.ID == "" {
 		event.ID = uuid.New().String()
 	}
@@ -89,6 +95,10 @@ func (s *Storage) Update(ctx context.Context, id string, event storage.Event) er
 		return err
 	}
 	defer s.Close(ctx)
+	err = s.checkDateBusy(ctx, event)
+	if err != nil {
+		return err
+	}
 	_, err = s.conn.ExecContext(
 		ctx, updateQuery, event.Title, event.DateTime, fmt.Sprintf("%v", event.Duration), event.UserID, id,
 	)
@@ -157,6 +167,20 @@ func (s *Storage) FindByID(ctx context.Context, id string) (storage.Event, error
 	defer s.Close(ctx)
 	row := s.conn.QueryRowContext(ctx, findByIDQuery, id)
 	return s.rowToEvent(row)
+}
+
+func (s *Storage) checkDateBusy(ctx context.Context, event storage.Event) error {
+	result, err := s.conn.QueryContext(
+		ctx, checkDateBusyQuery, event.DateTime, fmt.Sprintf("%v", event.Duration),
+	)
+	if err != nil {
+		return fmt.Errorf("не удалось проверить свободность даты: %w", err)
+	}
+	defer result.Close()
+	if result.Next() {
+		return storage.ErrDateBusy
+	}
+	return nil
 }
 
 func (s *Storage) findByDateTimeBetween(ctx context.Context, startDate time.Time, endDate time.Time) (
