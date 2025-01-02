@@ -1,6 +1,7 @@
 package hw10programoptimization
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -36,11 +37,11 @@ func getUsers(r io.Reader) (result users, err error) {
 		return
 	}
 
-	lines := strings.Split(string(content), "\n")
+	lines := bytes.Split(content, []byte{'\n'})
 	result = make(users, len(lines))
 	var user User
 	for i, line := range lines {
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
+		if err = json.Unmarshal(line, &user); err != nil {
 			return
 		}
 		result[i] = user

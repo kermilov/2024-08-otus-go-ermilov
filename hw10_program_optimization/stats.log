@@ -1,3 +1,3 @@
 === RUN   TestGetDomainStat_Time_And_Memory
-    stats_optimization_test.go:46: time used: 408.5392ms / 300ms
-    stats_optimization_test.go:47: memory used: 292Mb / 30Mb
+    stats_optimization_test.go:46: time used: 391.7666ms / 300ms
+    stats_optimization_test.go:47: memory used: 258Mb / 30Mb
