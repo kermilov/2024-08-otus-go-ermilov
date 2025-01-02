@@ -2,6 +2,6 @@ goos: windows
 goarch: amd64
 pkg: github.com/kermilov/2024-08-otus-go-ermilov/hw10_program_optimization
 cpu: AMD EPYC 9374F 32-Core Processor               
-BenchmarkGetDomainStat-6   	   55531	     19970 ns/op
+BenchmarkGetDomainStat-6   	   50197	     21833 ns/op
 PASS
-ok  	github.com/kermilov/2024-08-otus-go-ermilov/hw10_program_optimization	16.347s
+ok  	github.com/kermilov/2024-08-otus-go-ermilov/hw10_program_optimization	12.902s
