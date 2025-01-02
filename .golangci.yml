@@ -1,4 +1,7 @@
 run:
+  skip-dirs:
+    # от ошибок линтеров на исходники golang в пайплайне github - Error: ../../../../../../opt/hostedtoolcache/go/1.23.4
+    - /opt/hostedtoolcache/go/
   tests: true
   build-tags:
     - bench

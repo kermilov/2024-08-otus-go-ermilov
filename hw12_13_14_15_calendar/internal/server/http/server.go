@@ -66,7 +66,7 @@ func NewServer(logger Logger, _ Application) *Server {
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	err := s.ListenAndServe()
+	err := s.Server.ListenAndServe()
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	err := s.Shutdown(ctx)
+	err := s.Server.Shutdown(ctx)
 	if err != nil {
 		return err
 	}

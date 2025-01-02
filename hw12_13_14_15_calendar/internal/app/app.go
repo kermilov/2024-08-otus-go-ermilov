@@ -30,11 +30,11 @@ type Storage interface {
 	FindByID(ctx context.Context, id string) (storage.Event, error)
 }
 
-func New(logger Logger, storage Storage) *App {
+func New(logger Logger, storage Storage) *App { //nolint:revive
 	return &App{}
 }
 
-func (a *App) CreateEvent(ctx context.Context, id, title string) error {
+func (a *App) CreateEvent(ctx context.Context, id, title string) error { //nolint:revive
 	// TODO
 	return nil
 	// return a.storage.CreateEvent(storage.Event{ID: id, Title: title})

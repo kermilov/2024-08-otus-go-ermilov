@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/migrations"
-	"github.com/pressly/goose/v3"
+	goose "github.com/pressly/goose/v3"
 )
 
 type Storage struct {
