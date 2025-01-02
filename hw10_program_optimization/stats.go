@@ -31,22 +31,22 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 
 type users []User
 
-func getUsers(r io.Reader) (result users, err error) {
+func getUsers(r io.Reader) (users, error) {
 	content, err := io.ReadAll(r)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	lines := bytes.Split(content, []byte{'\n'})
-	result = make(users, len(lines))
+	result := make(users, len(lines))
 	var user User
 	for i, line := range lines {
 		if err = json.Unmarshal(line, &user); err != nil {
-			return
+			return nil, err
 		}
 		result[i] = user
 	}
-	return
+	return result, nil
 }
 
 func countDomains(u users, domain string) (DomainStat, error) {
