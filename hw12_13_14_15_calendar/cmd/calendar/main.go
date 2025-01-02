@@ -72,9 +72,6 @@ func getStorage(config Config) app.Storage {
 		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable search_path=%s",
 			db.Host, db.Port, db.User, db.Password, db.Name, db.Schema)
 		return sqlstorage.New(dsn)
-	default:
-		panic(fmt.Errorf("неизвестный тип хранения: %s", config.Storage))
 	}
-	//nolint:typecheck
-	//от ложной ошибки линтера Error: cmd/calendar/main.go:78:1: missing return (typecheck)
+	panic(fmt.Errorf("неизвестный тип хранения: %s", config.Storage))
 }
