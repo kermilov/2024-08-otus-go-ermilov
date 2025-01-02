@@ -28,7 +28,7 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	return countDomains(u, domain)
 }
 
-type users [100_000]User
+type users []User
 
 func getUsers(r io.Reader) (result users, err error) {
 	content, err := io.ReadAll(r)
@@ -37,6 +37,7 @@ func getUsers(r io.Reader) (result users, err error) {
 	}
 
 	lines := strings.Split(string(content), "\n")
+	result = make(users, len(lines))
 	for i, line := range lines {
 		var user User
 		if err = json.Unmarshal([]byte(line), &user); err != nil {
