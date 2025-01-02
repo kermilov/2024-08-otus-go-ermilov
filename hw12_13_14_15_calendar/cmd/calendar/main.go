@@ -64,6 +64,9 @@ func main() {
 }
 
 func getStorage(config Config) app.Storage {
+	if _, isOk := supportedStorages[config.Storage]; !isOk {
+		panic(fmt.Errorf("неизвестный тип хранения: %s", config.Storage))
+	}
 	switch config.Storage {
 	case InMemoryStorage:
 		return memorystorage.New()
@@ -73,5 +76,5 @@ func getStorage(config Config) app.Storage {
 			db.Host, db.Port, db.User, db.Password, db.Name, db.Schema)
 		return sqlstorage.New(dsn)
 	}
-	panic(fmt.Errorf("неизвестный тип хранения: %s", config.Storage))
+	return nil
 }
