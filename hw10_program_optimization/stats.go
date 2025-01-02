@@ -9,13 +9,13 @@ import (
 )
 
 type User struct {
-	ID       int
-	Name     string
-	Username string
-	Email    string
-	Phone    string
-	Password string
-	Address  string
+	// ID       int
+	// Name     string
+	// Username string
+	Email string
+	// Phone    string
+	// Password string
+	// Address  string
 }
 
 type DomainStat map[string]int
