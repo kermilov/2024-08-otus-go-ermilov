@@ -75,4 +75,6 @@ func getStorage(config Config) app.Storage {
 	default:
 		panic(fmt.Errorf("неизвестный тип хранения: %s", config.Storage))
 	}
+	//nolint:typecheck
+	//от ложной ошибки линтера Error: cmd/calendar/main.go:78:1: missing return (typecheck)
 }
