@@ -1,4 +1,4 @@
-module github.com/fixme_my_friend/hw10_program_optimization
+module github.com/kermilov/2024-08-otus-go-ermilov/hw10_program_optimization
 
 go 1.22
 
