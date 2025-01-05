@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -12,6 +11,7 @@ import (
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/app"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/logger"
+	internalgrpc "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/sql"
@@ -20,7 +20,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "C:/Users/kermilov/Otus/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/configs/config.json", "Path to configuration file")
 }
 
 func main() {
@@ -37,7 +37,8 @@ func main() {
 	storage := getStorage(config)
 	calendar := app.New(logg, storage)
 
-	server := internalhttp.NewServer(logg, calendar)
+	serverHttp := internalhttp.NewServer(logg, calendar, config.HTTP.String())
+	serverGrpc := internalgrpc.NewServer(logg, calendar, config.GRPC.String())
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -49,18 +50,37 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
 
-		if err := server.Stop(ctx); err != nil {
+		if err := serverHttp.Stop(ctx); err != nil {
 			logg.Error("failed to stop http server: " + err.Error())
+		}
+	}()
+
+	go func() {
+		<-ctx.Done()
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+
+		if err := serverGrpc.Stop(ctx); err != nil {
+			logg.Error("failed to stop grpc server: " + err.Error())
 		}
 	}()
 
 	logg.Info("calendar is running...")
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
-		cancel()
-		os.Exit(1) //nolint:gocritic
-	}
+	go func() {
+		if err := serverHttp.Start(ctx); err != nil {
+			logg.Error("failed to start http server: " + err.Error())
+			cancel()
+		}
+	}()
+	go func() {
+		if err := serverGrpc.Start(ctx); err != nil {
+			logg.Error("failed to start grpc server: " + err.Error())
+			cancel()
+		}
+	}()
+	<-ctx.Done()
 }
 
 func getStorage(config Config) app.Storage {
@@ -71,10 +91,7 @@ func getStorage(config Config) app.Storage {
 	case InMemoryStorage:
 		return memorystorage.New()
 	case SQLStorage:
-		db := config.DB
-		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable search_path=%s",
-			db.Host, db.Port, db.User, db.Password, db.Name, db.Schema)
-		return sqlstorage.New(dsn)
+		return sqlstorage.New(config.DB.String())
 	}
 	return nil
 }

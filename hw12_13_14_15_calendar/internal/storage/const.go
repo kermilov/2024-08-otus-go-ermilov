@@ -1,8 +1,12 @@
 package storage
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
-	ErrEventNotFound = errors.New("событие не найдено")
-	ErrDateBusy      = errors.New("данное время уже занято другим событием")
+	ErrBusiness      = errors.New("business error")
+	ErrEventNotFound = fmt.Errorf("%w : событие не найдено", ErrBusiness)
+	ErrDateBusy      = fmt.Errorf("%w : данное время уже занято другим событием", ErrBusiness)
 )

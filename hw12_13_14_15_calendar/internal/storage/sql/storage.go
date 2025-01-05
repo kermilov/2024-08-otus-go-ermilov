@@ -85,7 +85,7 @@ func (s *Storage) Create(ctx context.Context, event storage.Event) (storage.Even
 	if err != nil {
 		return storage.Event{}, fmt.Errorf("не удалось создать событие: %w", err)
 	}
-	return storage.Event{}, nil
+	return event, nil
 }
 
 // Обновить (ID события, событие).

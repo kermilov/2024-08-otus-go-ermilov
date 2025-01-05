@@ -2,6 +2,71 @@ syntax = "proto3";
 
 package event;
 
+option go_package = "./;pb";
+
+// Определение сообщения для события
 message Event {
-    // TODO
+  string id = 1;
+  string title = 2;
+  string datetime = 3; // ISO8601 format
+  string duration = 4; // ISO8601 duration format
+  int64 userid = 5;
+}
+
+// Запросы и ответы для методов создания, обновления и удаления событий
+message CreateEventRequest {
+  Event event = 1;
+}
+
+message CreateEventResponse {
+    oneof result {
+        Event event = 1;
+        string error = 2;
+    }
+}
+
+message UpdateEventRequest {
+  string id = 1;
+  Event event = 2;
+}
+
+message UpdateEventResponse {
+    string error = 1;
+}
+
+message DeleteEventRequest {
+  string id = 1;
+}
+
+message DeleteEventResponse {
+    string error = 1;
+}
+
+// Запросы и ответы для методов получения списка событий
+message GetEventsByDateRequest {
+  string date = 1; // ISO8601 date format
+}
+
+message GetEventsResponse {
+  repeated Event events = 1;
+}
+
+// Запросы и ответы для получения события по ID
+message GetEventByIDRequest {
+  string id = 1;
+}
+
+message GetEventByIDResponse {
+  Event event = 1;
+}
+
+// Сервис, определяющий все методы, соответствующие интерфейсу Storage
+service EventService {
+  rpc CreateEvent(CreateEventRequest) returns (CreateEventResponse);
+  rpc UpdateEvent(UpdateEventRequest) returns (UpdateEventResponse);
+  rpc DeleteEvent(DeleteEventRequest) returns (DeleteEventResponse);
+  rpc GetEventsByDay(GetEventsByDateRequest) returns (GetEventsResponse);
+  rpc GetEventsByWeek(GetEventsByDateRequest) returns (GetEventsResponse);
+  rpc GetEventsByMonth(GetEventsByDateRequest) returns (GetEventsResponse);
+  rpc GetEventByID(GetEventByIDRequest) returns (GetEventByIDResponse);
 }

@@ -52,11 +52,11 @@ func (h *myHandler) hello(name string) (string, error) {
 	return `{"hello":"world"}`, nil
 }
 
-func NewServer(logger Logger, _ Application) *Server {
+func NewServer(logger Logger, _ Application, addr string) *Server {
 	handler := &myHandler{}
 	return &Server{
 		Server: http.Server{
-			Addr:         ":8080",
+			Addr:         addr,
 			Handler:      loggingMiddleware(handler),
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
@@ -65,12 +65,11 @@ func NewServer(logger Logger, _ Application) *Server {
 	}
 }
 
-func (s *Server) Start(ctx context.Context) error {
+func (s *Server) Start(_ context.Context) error {
 	err := s.Server.ListenAndServe()
 	if err != nil {
 		return err
 	}
-	<-ctx.Done()
 	return nil
 }
 
