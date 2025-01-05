@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server/grpc/pb"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage"
 	"google.golang.org/grpc"
@@ -14,29 +15,10 @@ import (
 type Server struct {
 	*grpc.Server
 	addr   string
-	logger Logger
+	logger server.Logger
 }
 
-type Logger interface {
-	Error(msg string)
-	Warning(msg string)
-	Info(msg string)
-	Debug(msg string)
-}
-
-type Application interface {
-	CreateEvent(ctx context.Context,
-		id string, title string, datetime time.Time, duration *time.Duration, userid int64) (*storage.Event, error)
-	UpdateEvent(ctx context.Context,
-		id string, title string, datetime time.Time, duration *time.Duration, userid int64) error
-	DeleteEvent(ctx context.Context, id string) error
-	FindEventByDay(ctx context.Context, date time.Time) ([]storage.Event, error)
-	FindEventByWeek(ctx context.Context, date time.Time) ([]storage.Event, error)
-	FindEventByMonth(ctx context.Context, date time.Time) ([]storage.Event, error)
-	FindEventByID(ctx context.Context, id string) (storage.Event, error)
-}
-
-func NewServer(logger Logger, app Application, addr string) *Server {
+func NewServer(logger server.Logger, app server.Application, addr string) *Server {
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			loggingMiddleware(),
@@ -69,15 +51,13 @@ func (s *Server) Stop(_ context.Context) error {
 
 type Service struct {
 	pb.UnimplementedEventServiceServer
-	app Application
+	app server.Application
 }
 
 // CreateEvent implements pb.EventServiceServer.
 func (s *Service) CreateEvent(ctx context.Context, req *pb.CreateEventRequest) (*pb.CreateEventResponse, error) {
-	// Указание формата времени
-	layout := time.RFC3339
 	// Преобразование строки в time.Time
-	eventTime, err := time.Parse(layout, req.Event.Datetime)
+	eventTime, err := time.Parse(server.Layout, req.Event.Datetime)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +91,7 @@ func (s *Service) CreateEvent(ctx context.Context, req *pb.CreateEventRequest) (
 	protoEvent := &pb.Event{
 		Id:       event.ID,
 		Title:    event.Title,
-		Datetime: event.DateTime.String(),
+		Datetime: event.DateTime.Format(server.Layout),
 		Duration: event.Duration.String(),
 		Userid:   event.UserID,
 	}
@@ -125,10 +105,8 @@ func (s *Service) CreateEvent(ctx context.Context, req *pb.CreateEventRequest) (
 
 // UpdateEvent implements pb.EventServiceServer.
 func (s *Service) UpdateEvent(ctx context.Context, req *pb.UpdateEventRequest) (*pb.UpdateEventResponse, error) {
-	// Указание формата времени
-	layout := time.RFC3339
 	// Преобразование строки в time.Time
-	eventTime, err := time.Parse(layout, req.Event.Datetime)
+	eventTime, err := time.Parse(server.Layout, req.Event.Datetime)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +168,7 @@ func (s *Service) GetEventByID(ctx context.Context, req *pb.GetEventByIDRequest)
 	protoEvent := &pb.Event{
 		Id:       event.ID,
 		Title:    event.Title,
-		Datetime: event.DateTime.String(),
+		Datetime: event.DateTime.Format(server.Layout),
 		Duration: event.Duration.String(),
 		Userid:   event.UserID,
 	}
@@ -202,10 +180,8 @@ func (s *Service) GetEventByID(ctx context.Context, req *pb.GetEventByIDRequest)
 
 // GetEventsByDay implements pb.EventServiceServer.
 func (s *Service) GetEventsByDay(ctx context.Context, req *pb.GetEventsByDateRequest) (*pb.GetEventsResponse, error) {
-	// Указание формата времени
-	layout := time.RFC3339
 	// Преобразование строки в time.Time
-	searchDate, err := time.Parse(layout, req.Date)
+	searchDate, err := time.Parse(server.Layout, req.Date)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +194,7 @@ func (s *Service) GetEventsByDay(ctx context.Context, req *pb.GetEventsByDateReq
 		protoEvent := &pb.Event{
 			Id:       event.ID,
 			Title:    event.Title,
-			Datetime: event.DateTime.String(),
+			Datetime: event.DateTime.Format(server.Layout),
 			Duration: event.Duration.String(),
 			Userid:   event.UserID,
 		}
@@ -229,10 +205,8 @@ func (s *Service) GetEventsByDay(ctx context.Context, req *pb.GetEventsByDateReq
 
 // GetEventsByMonth implements pb.EventServiceServer.
 func (s *Service) GetEventsByMonth(ctx context.Context, req *pb.GetEventsByDateRequest) (*pb.GetEventsResponse, error) {
-	// Указание формата времени
-	layout := time.RFC3339
 	// Преобразование строки в time.Time
-	searchDate, err := time.Parse(layout, req.Date)
+	searchDate, err := time.Parse(server.Layout, req.Date)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +219,7 @@ func (s *Service) GetEventsByMonth(ctx context.Context, req *pb.GetEventsByDateR
 		protoEvent := &pb.Event{
 			Id:       event.ID,
 			Title:    event.Title,
-			Datetime: event.DateTime.String(),
+			Datetime: event.DateTime.Format(server.Layout),
 			Duration: event.Duration.String(),
 			Userid:   event.UserID,
 		}
@@ -256,10 +230,8 @@ func (s *Service) GetEventsByMonth(ctx context.Context, req *pb.GetEventsByDateR
 
 // GetEventsByWeek implements pb.EventServiceServer.
 func (s *Service) GetEventsByWeek(ctx context.Context, req *pb.GetEventsByDateRequest) (*pb.GetEventsResponse, error) {
-	// Указание формата времени
-	layout := time.RFC3339
 	// Преобразование строки в time.Time
-	searchDate, err := time.Parse(layout, req.Date)
+	searchDate, err := time.Parse(server.Layout, req.Date)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +244,7 @@ func (s *Service) GetEventsByWeek(ctx context.Context, req *pb.GetEventsByDateRe
 		protoEvent := &pb.Event{
 			Id:       event.ID,
 			Title:    event.Title,
-			Datetime: event.DateTime.String(),
+			Datetime: event.DateTime.Format(server.Layout),
 			Duration: event.Duration.String(),
 			Userid:   event.UserID,
 		}
