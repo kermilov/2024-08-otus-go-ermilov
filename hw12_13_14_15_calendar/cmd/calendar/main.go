@@ -20,7 +20,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "C:/Users/kermilov/Otus/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/configs/config.json", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
 }
 
 func main() {
