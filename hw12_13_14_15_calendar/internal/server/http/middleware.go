@@ -18,7 +18,7 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
-	logFile, err := os.OpenFile("access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
+	logFile, err := os.OpenFile("access_http.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 	if err != nil {
 		panic(err)
 	}

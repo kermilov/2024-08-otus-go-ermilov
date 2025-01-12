@@ -30,9 +30,9 @@ issues:
         - gocyclo
         - gosec
   exclude-dirs:
-    # от ошибок линтеров на исходники golang и используемых бибилиотек в пайплайне github - Error: ../../../../../../opt/hostedtoolcache/go/1.23.4
+    # от ошибок линтеров на исходники golang в пайплайне github - Error: ../../../../../../opt/hostedtoolcache/go/1.23.4
     - /opt/hostedtoolcache/go/
-    # от ошибок линтеров на исходники используемых бибилиотек в пайплайне github - Error: ../../../../go/pkg/mod/github.com/jackc/pgx@v3.6.2+incompatible/conn.go:1491:6: softErr declared and not used (typecheck)
+    # от ошибок линтеров на исходники используемых библиотек в пайплайне github - Error: ../../../../go/pkg/mod/github.com/jackc/pgx@v3.6.2+incompatible/conn.go:1491:6: softErr declared and not used (typecheck)
     - ../../../../go/pkg/mod/
 
 linters:

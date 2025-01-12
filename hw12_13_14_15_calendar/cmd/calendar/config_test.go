@@ -19,4 +19,6 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, "calendar", actual.DB.Schema)
 	require.Equal(t, "localhost", actual.HTTP.Host)
 	require.Equal(t, 8080, actual.HTTP.Port)
+	require.Equal(t, "localhost", actual.GRPC.Host)
+	require.Equal(t, 50051, actual.GRPC.Port)
 }
