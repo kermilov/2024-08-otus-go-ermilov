@@ -7,7 +7,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	configFile = "../../configs/calendar_config.json"
+	configFile = "../../configs/calendar_scheduler.json"
 	actual := NewConfig()
 	require.Equal(t, "INFO", actual.Logger.Level)
 	require.Equal(t, SQLStorage, actual.Storage)
@@ -17,8 +17,6 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, "postgres", actual.DB.Password)
 	require.Equal(t, "otus", actual.DB.Name)
 	require.Equal(t, "calendar", actual.DB.Schema)
-	require.Equal(t, "localhost", actual.HTTP.Host)
-	require.Equal(t, 8080, actual.HTTP.Port)
-	require.Equal(t, "localhost", actual.GRPC.Host)
-	require.Equal(t, 50051, actual.GRPC.Port)
+	require.Equal(t, "localhost", actual.Kafka.Host)
+	require.Equal(t, 29092, actual.Kafka.Port)
 }

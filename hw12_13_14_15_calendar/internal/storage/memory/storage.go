@@ -97,6 +97,10 @@ func (s *Storage) SetIsSendNotification(_ context.Context, _ []string) error {
 	return nil
 }
 
+func (s *Storage) DeleteOldEvents(_ context.Context, _ time.Time) error {
+	return nil
+}
+
 func (s *Storage) checkDateBusy(_ context.Context, event storage.Event) error {
 	for _, v := range s.storage {
 		if (v.DateTime.Compare(event.DateTime) >= 0) &&

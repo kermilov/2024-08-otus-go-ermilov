@@ -68,6 +68,7 @@ const (
 	findForSendNotification = `select id, title, datetime, duration, userid, notification_duration 
 	                   from event where not is_send_notification and (datetime - notification_duration)  < $1`
 	setIsSendNotificationQuery = `update event set is_send_notification = true where id = $1`
+	deleteOldEventsQuery       = `delete from event where datetime < $1`
 )
 
 // Создать (событие).
@@ -211,6 +212,19 @@ func (s *Storage) SetIsSendNotification(ctx context.Context, ids []string) error
 		if err != nil {
 			return fmt.Errorf("не удалось обновить событие: %w", err)
 		}
+	}
+	return nil
+}
+
+func (s *Storage) DeleteOldEvents(ctx context.Context, date time.Time) error {
+	err := s.Connect(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.Close(ctx)
+	_, err = s.conn.ExecContext(ctx, deleteOldEventsQuery, date.AddDate(-1, 0, 0))
+	if err != nil {
+		return fmt.Errorf("не удалось удалить старые события: %w", err)
 	}
 	return nil
 }

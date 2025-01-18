@@ -21,9 +21,14 @@ type Logger interface {
 // Общий интерфейс приложения на разные реализации сервера.
 type Application interface {
 	CreateEvent(ctx context.Context,
-		id string, title string, datetime time.Time, duration *time.Duration, userid int64, notificationDuration *time.Duration) (*storage.Event, error)
+		id string, title string, datetime time.Time, duration *time.Duration, userid int64,
+		notificationDuration *time.Duration,
+	) (
+		*storage.Event, error,
+	)
 	UpdateEvent(ctx context.Context,
-		id string, title string, datetime time.Time, duration *time.Duration, userid int64, notificationDuration *time.Duration) error
+		id string, title string, datetime time.Time, duration *time.Duration, userid int64,
+		notificationDuration *time.Duration) error
 	DeleteEvent(ctx context.Context, id string) error
 	FindEventByDay(ctx context.Context, date time.Time) ([]storage.Event, error)
 	FindEventByWeek(ctx context.Context, date time.Time) ([]storage.Event, error)

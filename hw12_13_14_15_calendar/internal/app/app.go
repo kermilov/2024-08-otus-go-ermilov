@@ -36,6 +36,7 @@ type Storage interface {
 	FindByID(ctx context.Context, id string) (storage.Event, error)
 	FindForSendNotification(ctx context.Context, date time.Time) ([]storage.Event, error)
 	SetIsSendNotification(ctx context.Context, ids []string) error
+	DeleteOldEvents(ctx context.Context, date time.Time) error
 }
 
 func New(logger Logger, storage Storage) *App {
@@ -169,6 +170,15 @@ func (a *App) FindForSendNotification(ctx context.Context, date time.Time) ([]st
 func (a *App) SetIsSendNotification(ctx context.Context, ids []string) error {
 	a.logger.Info("set is send notification")
 	err := a.storage.SetIsSendNotification(ctx, ids)
+	if err != nil {
+		a.logger.Error(err.Error())
+	}
+	return err
+}
+
+func (a *App) DeleteOldEvents(ctx context.Context, date time.Time) error {
+	a.logger.Info("delete old events")
+	err := a.storage.DeleteOldEvents(ctx, date)
 	if err != nil {
 		a.logger.Error(err.Error())
 	}
