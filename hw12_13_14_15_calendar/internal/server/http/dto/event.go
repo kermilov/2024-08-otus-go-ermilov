@@ -13,4 +13,5 @@ type Event struct {
 	// ID пользователя, владельца события;
 	UserID int64 `json:"userId"`
 	// За сколько времени высылать уведомление, опционально.
+	NotificationDuration string `json:"notificationDuration"`
 }

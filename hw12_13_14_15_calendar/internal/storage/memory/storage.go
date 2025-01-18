@@ -83,6 +83,20 @@ func (s *Storage) FindByID(_ context.Context, id string) (storage.Event, error) 
 	return result, nil
 }
 
+func (s *Storage) FindForSendNotification(_ context.Context, date time.Time) ([]storage.Event, error) {
+	result := make([]storage.Event, 0)
+	for _, v := range s.storage {
+		if v.DateTime.Add(-v.NotificationDuration).Compare(date) <= 0 {
+			result = append(result, v)
+		}
+	}
+	return result, nil
+}
+
+func (s *Storage) SetIsSendNotification(_ context.Context, _ []string) error {
+	return nil
+}
+
 func (s *Storage) checkDateBusy(_ context.Context, event storage.Event) error {
 	for _, v := range s.storage {
 		if (v.DateTime.Compare(event.DateTime) >= 0) &&
