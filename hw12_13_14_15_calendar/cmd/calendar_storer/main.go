@@ -85,7 +85,9 @@ func getConsumer(logg *logger.Logger, config Config, calendar *app.App) internal
 	}
 	switch config.MessageBroker { //nolint: gocritic
 	case Kafka:
-		return kafka.NewConsumer(logg, calendar, config.Kafka.String(), config.NotificationQueue, internalСonsumer.SaveNotification)
+		return kafka.NewConsumer(
+			logg, calendar, config.Kafka.String(), config.NotificationQueue, internalСonsumer.SaveNotification,
+		)
 	}
 	return nil
 }

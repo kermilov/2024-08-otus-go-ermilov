@@ -101,7 +101,9 @@ func (s *Storage) DeleteOldEvents(_ context.Context, _ time.Time) error {
 	return nil
 }
 
-func (s *Storage) SaveNotification(ctx context.Context, id string, title string, datetime time.Time, userid int64) error {
+func (s *Storage) SaveNotification(
+	_ context.Context, _ string, _ string, _ time.Time, _ int64,
+) error {
 	return nil
 }
 
