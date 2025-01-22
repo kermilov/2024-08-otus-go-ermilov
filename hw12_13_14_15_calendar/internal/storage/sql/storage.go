@@ -56,7 +56,7 @@ func (s *Storage) Close(_ context.Context) error {
 
 const (
 	checkDateBusyQuery = `select 1 from event where $1 between datetime and datetime + duration 
-	or ($1::timestamp + $2::interval) between datetime and datetime + duration`
+	                      or ($1::timestamp + $2::interval) between datetime and datetime + duration`
 	insertQuery = `insert into event (id, title, datetime, duration, userid, notification_duration) 
 	               values ($1, $2, $3, $4, $5, $6) returning id, title, datetime, duration, userid, notification_duration`
 	updateQuery                = `update event set title = $2, datetime = $3, duration = $4, userid = $5 where id = $1`
@@ -69,6 +69,9 @@ const (
 	                   from event where not is_send_notification and (datetime - notification_duration)  < $1`
 	setIsSendNotificationQuery = `update event set is_send_notification = true where id = $1`
 	deleteOldEventsQuery       = `delete from event where datetime < $1`
+	saveNotificationQuery      = `insert into notification (id, title, datetime, userid) 
+	                              values ($1, $2, $3, $4)
+								  on conflict (id) do update set title = $2, datetime = $3, userid = $4 returning id, title, datetime, userid`
 )
 
 // Создать (событие).
@@ -225,6 +228,21 @@ func (s *Storage) DeleteOldEvents(ctx context.Context, date time.Time) error {
 	_, err = s.conn.ExecContext(ctx, deleteOldEventsQuery, date.AddDate(-1, 0, 0))
 	if err != nil {
 		return fmt.Errorf("не удалось удалить старые события: %w", err)
+	}
+	return nil
+}
+
+func (s *Storage) SaveNotification(
+	ctx context.Context, id string, title string, datetime time.Time, userid int64,
+) error {
+	err := s.Connect(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.Close(ctx)
+	_, err = s.conn.ExecContext(ctx, saveNotificationQuery, id, title, datetime, userid)
+	if err != nil {
+		return fmt.Errorf("не удалось сохранить уведомление: %w", err)
 	}
 	return nil
 }

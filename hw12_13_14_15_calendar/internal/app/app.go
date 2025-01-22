@@ -37,6 +37,7 @@ type Storage interface {
 	FindForSendNotification(ctx context.Context, date time.Time) ([]storage.Event, error)
 	SetIsSendNotification(ctx context.Context, ids []string) error
 	DeleteOldEvents(ctx context.Context, date time.Time) error
+	SaveNotification(ctx context.Context, id string, title string, datetime time.Time, userid int64) error
 }
 
 func New(logger Logger, storage Storage) *App {
@@ -179,6 +180,26 @@ func (a *App) SetIsSendNotification(ctx context.Context, ids []string) error {
 func (a *App) DeleteOldEvents(ctx context.Context, date time.Time) error {
 	a.logger.Info("delete old events")
 	err := a.storage.DeleteOldEvents(ctx, date)
+	if err != nil {
+		a.logger.Error(err.Error())
+	}
+	return err
+}
+
+// SaveNotification implements consumer.Application.
+func (a *App) SaveNotification(ctx context.Context,
+	id string,
+	title string,
+	datetime time.Time,
+	userid int64,
+) error {
+	a.logger.Info("save notification")
+	err := a.storage.SaveNotification(ctx,
+		id,
+		title,
+		datetime,
+		userid,
+	)
 	if err != nil {
 		a.logger.Error(err.Error())
 	}
