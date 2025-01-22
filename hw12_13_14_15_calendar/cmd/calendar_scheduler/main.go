@@ -11,8 +11,8 @@ import (
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/app"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/logger"
-	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/producer"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/producer/kafka"
+	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/scheduler"
 	memorystorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/sql"
 )
@@ -37,7 +37,8 @@ func main() {
 	storage := getStorage(config)
 	calendar := app.New(logg, storage)
 
-	producer := getProducer(logg, calendar, config)
+	producer := getProducer(logg, config)
+	scheduler := scheduler.NewScheduler(logg, calendar, producer, config.Duration.Duration)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -49,24 +50,18 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
 
-		if err := producer.Stop(ctx); err != nil {
-			logg.Error("failed to stop producer: " + err.Error())
+		if err := scheduler.Stop(ctx); err != nil {
+			logg.Error("failed to stop scheduler: " + err.Error())
 		}
 	}()
 
 	logg.Info("calendar scheduler is running...")
 
 	go func() {
-		if err := producer.Start(ctx); err != nil {
-			logg.Error("failed to start producer: " + err.Error())
+		if err := scheduler.Start(ctx); err != nil {
+			logg.Error("failed to start scheduler: " + err.Error())
 			cancel()
 			return
-		}
-		// Немедленное выполнение задачи при запуске
-		producer.ScheduledProcess(ctx)
-		// Запуск бесконечного цикла для выполнения задачи каждые 15 минут
-		for range time.NewTicker(15 * time.Minute).C {
-			producer.ScheduledProcess(ctx)
 		}
 	}()
 	<-ctx.Done()
@@ -85,7 +80,13 @@ func getStorage(config Config) app.Storage {
 	return nil
 }
 
-func getProducer(logg *logger.Logger, calendar *app.App, config Config) producer.Producer {
-	kafkaProducer := kafka.NewProducer(logg, calendar, config.Kafka.String())
-	return kafkaProducer
+func getProducer(logg *logger.Logger, config Config) scheduler.Producer {
+	if _, isOk := supportedMessageBrokers[config.MessageBroker]; !isOk {
+		panic(fmt.Errorf("неизвестный брокер сообщений: %s", config.MessageBroker))
+	}
+	switch config.MessageBroker { //nolint: gocritic
+	case Kafka:
+		return kafka.NewProducer(logg, config.Kafka.String(), config.NotificationQueue)
+	}
+	return nil
 }

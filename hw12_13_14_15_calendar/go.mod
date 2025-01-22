@@ -30,6 +30,7 @@ require (
 )
 
 require (
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx v3.6.2+incompatible

@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 )
 
 const (
@@ -18,14 +19,43 @@ var supportedStorages = map[string]struct{}{
 	SQLStorage:      {},
 }
 
+const (
+	Kafka = "kafka"
+)
+
+var supportedMessageBrokers = map[string]struct{}{
+	Kafka: {},
+}
+
 // При желании конфигурацию можно вынести в internal/config.
 // Организация конфига в main принуждает нас сужать API компонентов, использовать
 // при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
 type Config struct {
-	Logger  LoggerConf `json:"logger"`
-	Storage string     `json:"storage"`
-	DB      DBConf     `json:"db"`
-	Kafka   KafkaConf  `json:"kafka"`
+	Logger            LoggerConf     `json:"logger"`
+	Storage           string         `json:"storage"`
+	NotificationQueue string         `json:"notificationQueue"`
+	MessageBroker     string         `json:"messageBroker"`
+	DB                DBConf         `json:"db"`
+	Kafka             KafkaConf      `json:"kafka"`
+	Duration          CustomDuration `json:"duration"`
+}
+
+type CustomDuration struct {
+	time.Duration
+}
+
+func (d *CustomDuration) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+
+	duration, err := time.ParseDuration(s)
+	if err != nil {
+		return err
+	}
+	d.Duration = duration
+	return nil
 }
 
 type LoggerConf struct {
