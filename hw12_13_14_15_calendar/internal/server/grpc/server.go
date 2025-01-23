@@ -70,12 +70,22 @@ func (s *Service) CreateEvent(ctx context.Context, req *pb.CreateEventRequest) (
 		}
 		eventDuration = &parseDuration
 	}
+	// Преобразование строки в time.Duration
+	var eventNotificationDuration *time.Duration
+	if req.Event.Notificationduration != "" {
+		parseDuration, err := time.ParseDuration(req.Event.Notificationduration)
+		if err != nil {
+			return nil, err
+		}
+		eventNotificationDuration = &parseDuration
+	}
 	event, err := s.app.CreateEvent(ctx,
 		req.Event.Id,
 		req.Event.Title,
 		eventTime,
 		eventDuration,
 		req.Event.Userid,
+		eventNotificationDuration,
 	)
 	if err != nil {
 		if errors.Is(err, storage.ErrBusiness) {
@@ -88,16 +98,9 @@ func (s *Service) CreateEvent(ctx context.Context, req *pb.CreateEventRequest) (
 		}
 		return nil, err
 	}
-	protoEvent := &pb.Event{
-		Id:       event.ID,
-		Title:    event.Title,
-		Datetime: event.DateTime.Format(server.Layout),
-		Duration: event.Duration.String(),
-		Userid:   event.UserID,
-	}
 	resp := &pb.CreateEventResponse{
 		Result: &pb.CreateEventResponse_Event{
-			Event: protoEvent,
+			Event: s.mapToProtobufEvent(*event),
 		},
 	}
 	return resp, nil
@@ -119,12 +122,22 @@ func (s *Service) UpdateEvent(ctx context.Context, req *pb.UpdateEventRequest) (
 		}
 		eventDuration = &parseDuration
 	}
+	// Преобразование строки в time.Duration
+	var eventNotificationDuration *time.Duration
+	if req.Event.Notificationduration != "" {
+		parseDuration, err := time.ParseDuration(req.Event.Notificationduration)
+		if err != nil {
+			return nil, err
+		}
+		eventNotificationDuration = &parseDuration
+	}
 	err = s.app.UpdateEvent(ctx,
 		req.Event.Id,
 		req.Event.Title,
 		eventTime,
 		eventDuration,
 		req.Event.Userid,
+		eventNotificationDuration,
 	)
 	if err != nil {
 		if errors.Is(err, storage.ErrBusiness) {
@@ -165,90 +178,57 @@ func (s *Service) GetEventByID(ctx context.Context, req *pb.GetEventByIDRequest)
 		}
 		return nil, err
 	}
-	protoEvent := &pb.Event{
-		Id:       event.ID,
-		Title:    event.Title,
-		Datetime: event.DateTime.Format(server.Layout),
-		Duration: event.Duration.String(),
-		Userid:   event.UserID,
-	}
 	resp := &pb.GetEventByIDResponse{
-		Event: protoEvent,
+		Event: s.mapToProtobufEvent(event),
 	}
 	return resp, nil
 }
 
+type findEventFunc func(ctx context.Context, date time.Time) ([]storage.Event, error)
+
 // GetEventsByDay implements pb.EventServiceServer.
 func (s *Service) GetEventsByDay(ctx context.Context, req *pb.GetEventsByDateRequest) (*pb.GetEventsResponse, error) {
-	// Преобразование строки в time.Time
-	searchDate, err := time.Parse(server.Layout, req.Date)
-	if err != nil {
-		return nil, err
-	}
-	events, err := s.app.FindEventByDay(ctx, searchDate)
-	if err != nil {
-		return nil, err
-	}
-	protoEvents := make([]*pb.Event, len(events))
-	for i, event := range events {
-		protoEvent := &pb.Event{
-			Id:       event.ID,
-			Title:    event.Title,
-			Datetime: event.DateTime.Format(server.Layout),
-			Duration: event.Duration.String(),
-			Userid:   event.UserID,
-		}
-		protoEvents[i] = protoEvent
-	}
-	return &pb.GetEventsResponse{Events: protoEvents}, nil
+	return s.getEvents(ctx, req, s.app.FindEventByDay)
 }
 
 // GetEventsByMonth implements pb.EventServiceServer.
 func (s *Service) GetEventsByMonth(ctx context.Context, req *pb.GetEventsByDateRequest) (*pb.GetEventsResponse, error) {
-	// Преобразование строки в time.Time
-	searchDate, err := time.Parse(server.Layout, req.Date)
-	if err != nil {
-		return nil, err
-	}
-	events, err := s.app.FindEventByMonth(ctx, searchDate)
-	if err != nil {
-		return nil, err
-	}
-	protoEvents := make([]*pb.Event, len(events))
-	for i, event := range events {
-		protoEvent := &pb.Event{
-			Id:       event.ID,
-			Title:    event.Title,
-			Datetime: event.DateTime.Format(server.Layout),
-			Duration: event.Duration.String(),
-			Userid:   event.UserID,
-		}
-		protoEvents[i] = protoEvent
-	}
-	return &pb.GetEventsResponse{Events: protoEvents}, nil
+	return s.getEvents(ctx, req, s.app.FindEventByMonth)
 }
 
 // GetEventsByWeek implements pb.EventServiceServer.
 func (s *Service) GetEventsByWeek(ctx context.Context, req *pb.GetEventsByDateRequest) (*pb.GetEventsResponse, error) {
+	return s.getEvents(ctx, req, s.app.FindEventByWeek)
+}
+
+func (s *Service) getEvents(
+	ctx context.Context, req *pb.GetEventsByDateRequest, method findEventFunc,
+) (
+	*pb.GetEventsResponse, error,
+) {
 	// Преобразование строки в time.Time
 	searchDate, err := time.Parse(server.Layout, req.Date)
 	if err != nil {
 		return nil, err
 	}
-	events, err := s.app.FindEventByWeek(ctx, searchDate)
+	events, err := method(ctx, searchDate)
 	if err != nil {
 		return nil, err
 	}
 	protoEvents := make([]*pb.Event, len(events))
 	for i, event := range events {
-		protoEvent := &pb.Event{
-			Id:       event.ID,
-			Title:    event.Title,
-			Datetime: event.DateTime.Format(server.Layout),
-			Duration: event.Duration.String(),
-			Userid:   event.UserID,
-		}
-		protoEvents[i] = protoEvent
+		protoEvents[i] = s.mapToProtobufEvent(event)
 	}
 	return &pb.GetEventsResponse{Events: protoEvents}, nil
+}
+
+func (*Service) mapToProtobufEvent(event storage.Event) *pb.Event {
+	return &pb.Event{
+		Id:                   event.ID,
+		Title:                event.Title,
+		Datetime:             event.DateTime.Format(server.Layout),
+		Duration:             event.Duration.String(),
+		Userid:               event.UserID,
+		Notificationduration: event.NotificationDuration.String(),
+	}
 }

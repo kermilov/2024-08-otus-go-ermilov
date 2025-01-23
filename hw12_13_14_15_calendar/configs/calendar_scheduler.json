@@ -1,0 +1,21 @@
+{
+    "logger": {
+        "level": "INFO"
+    },
+    "storage": "sql",
+    "notificationQueue": "notification-topic",
+    "messageBroker": "kafka",
+    "db": {
+        "host": "localhost",
+        "port": 5432,
+        "user": "postgres",
+        "password": "postgres",
+        "name": "otus",
+        "schema": "calendar"
+    },
+    "kafka": {
+        "host": "localhost",
+        "port": 29092
+    },
+    "duration": "1m"
+}

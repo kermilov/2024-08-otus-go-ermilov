@@ -20,6 +20,8 @@ linters-settings:
           - github.com/google/uuid
           - github.com/jackc/pgx/stdlib
           - github.com/pressly/goose/v3
+          - github.com/cenkalti/backoff/v4
+          - github.com/segmentio/kafka-go
           - github.com/kermilov/2024-08-otus-go-ermilov
 issues:
   exclude-rules:

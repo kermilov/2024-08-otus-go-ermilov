@@ -15,4 +15,5 @@ type Event struct {
 	// ID пользователя, владельца события;
 	UserID int64
 	// За сколько времени высылать уведомление, опционально.
+	NotificationDuration time.Duration
 }

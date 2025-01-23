@@ -6,9 +6,13 @@ LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%d
 
 build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+	go build -v -o $(BIN)_scheduler -ldflags "$(LDFLAGS)" ./cmd/calendar_scheduler
+	go build -v -o $(BIN)_storer -ldflags "$(LDFLAGS)" ./cmd/calendar_storer
 
 run: build
-	$(BIN) -config ./configs/config.json
+	$(BIN) -config ./configs/calendar_config.json
+	$(BIN)_scheduler -config ./configs/calendar_scheduler.json
+	$(BIN)_storer -config ./configs/calendar_storer.json
 
 build-img:
 	docker build \

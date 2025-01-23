@@ -10,9 +10,9 @@ import (
 
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/app"
+	internalСonsumer "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/consumer"
+	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/consumer/kafka"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/logger"
-	internalgrpc "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server/grpc"
-	internalhttp "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/sql"
 )
@@ -20,7 +20,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/calendar_config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "/etc/calendar/calendar_storer.json", "Path to configuration file")
 }
 
 func main() {
@@ -37,8 +37,7 @@ func main() {
 	storage := getStorage(config)
 	calendar := app.New(logg, storage)
 
-	serverHTTP := internalhttp.NewServer(logg, calendar, config.HTTP.String())
-	serverGRPC := internalgrpc.NewServer(logg, calendar, config.GRPC.String())
+	consumer := getConsumer(logg, config, calendar)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -50,34 +49,18 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
 
-		if err := serverHTTP.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
+		if err := consumer.Stop(ctx); err != nil {
+			logg.Error("failed to stop consumer: " + err.Error())
 		}
 	}()
 
-	go func() {
-		<-ctx.Done()
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-
-		if err := serverGRPC.Stop(ctx); err != nil {
-			logg.Error("failed to stop grpc server: " + err.Error())
-		}
-	}()
-
-	logg.Info("calendar is running...")
+	logg.Info("calendar storer is running...")
 
 	go func() {
-		if err := serverHTTP.Start(ctx); err != nil {
-			logg.Error("failed to start http server: " + err.Error())
+		if err := consumer.Start(ctx); err != nil {
+			logg.Error("failed to start consumer: " + err.Error())
 			cancel()
-		}
-	}()
-	go func() {
-		if err := serverGRPC.Start(ctx); err != nil {
-			logg.Error("failed to start grpc server: " + err.Error())
-			cancel()
+			return
 		}
 	}()
 	<-ctx.Done()
@@ -92,6 +75,19 @@ func getStorage(config Config) app.Storage {
 		return memorystorage.New()
 	case SQLStorage:
 		return sqlstorage.New(config.DB.String())
+	}
+	return nil
+}
+
+func getConsumer(logg *logger.Logger, config Config, calendar *app.App) internalСonsumer.Consumer {
+	if _, isOk := supportedMessageBrokers[config.MessageBroker]; !isOk {
+		panic(fmt.Errorf("неизвестный брокер сообщений: %s", config.MessageBroker))
+	}
+	switch config.MessageBroker { //nolint: gocritic
+	case Kafka:
+		return kafka.NewConsumer(
+			logg, calendar, config.Kafka.String(), config.NotificationQueue, internalСonsumer.SaveNotification,
+		)
 	}
 	return nil
 }

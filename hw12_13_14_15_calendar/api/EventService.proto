@@ -11,6 +11,7 @@ message Event {
   string datetime = 3; // ISO8601 format
   string duration = 4; // ISO8601 duration format
   int64 userid = 5;
+  string notificationduration = 6; // ISO8601 duration format
 }
 
 // Запросы и ответы для методов создания, обновления и удаления событий

@@ -114,12 +114,24 @@ func (s *Service) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		eventDuration = &parseDuration
 	}
+	// Преобразование строки в time.Duration
+	var eventNotificationDuration *time.Duration
+	if event.NotificationDuration != "" {
+		parseDuration, err := time.ParseDuration(event.NotificationDuration)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		eventNotificationDuration = &parseDuration
+	}
 	result, err := s.app.CreateEvent(s.ctx,
 		event.ID,
 		event.Title,
 		eventTime,
 		eventDuration,
 		event.UserID,
+		eventNotificationDuration,
 	)
 	if err != nil {
 		if errors.Is(err, storage.ErrBusiness) {
@@ -132,13 +144,7 @@ func (s *Service) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	resp := dto.Event{
-		ID:       result.ID,
-		Title:    result.Title,
-		DateTime: result.DateTime.Format(server.Layout),
-		Duration: result.Duration.String(),
-		UserID:   result.UserID,
-	}
+	resp := s.mapToDtoEvent(*result)
 	json.NewEncoder(w).Encode(resp)
 }
 
@@ -170,12 +176,24 @@ func (s *Service) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		}
 		eventDuration = &parseDuration
 	}
+	// Преобразование строки в time.Duration
+	var eventNotificationDuration *time.Duration
+	if event.NotificationDuration != "" {
+		parseDuration, err := time.ParseDuration(event.NotificationDuration)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		eventNotificationDuration = &parseDuration
+	}
 	err = s.app.UpdateEvent(s.ctx,
 		event.ID,
 		event.Title,
 		eventTime,
 		eventDuration,
 		event.UserID,
+		eventNotificationDuration,
 	)
 	if err != nil {
 		if errors.Is(err, storage.ErrBusiness) {
@@ -218,13 +236,7 @@ func (s *Service) GetEventByID(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	resp := dto.Event{
-		ID:       result.ID,
-		Title:    result.Title,
-		DateTime: result.DateTime.Format(server.Layout),
-		Duration: result.Duration.String(),
-		UserID:   result.UserID,
-	}
+	resp := s.mapToDtoEvent(result)
 	json.NewEncoder(w).Encode(resp)
 }
 
@@ -243,13 +255,7 @@ func (s *Service) GetEvents(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	resp := make([]dto.Event, len(results))
 	for i, result := range results {
-		resp[i] = dto.Event{
-			ID:       result.ID,
-			Title:    result.Title,
-			DateTime: result.DateTime.Format(server.Layout),
-			Duration: result.Duration.String(),
-			UserID:   result.UserID,
-		}
+		resp[i] = s.mapToDtoEvent(result)
 	}
 	json.NewEncoder(w).Encode(resp)
 }
@@ -284,4 +290,15 @@ func (s *Service) getEvents(r *http.Request) ([]storage.Event, error) {
 		return s.app.FindEventByMonth(s.ctx, date)
 	}
 	return nil, errors.ErrUnsupported
+}
+
+func (*Service) mapToDtoEvent(result storage.Event) dto.Event {
+	return dto.Event{
+		ID:                   result.ID,
+		Title:                result.Title,
+		DateTime:             result.DateTime.Format(server.Layout),
+		Duration:             result.Duration.String(),
+		UserID:               result.UserID,
+		NotificationDuration: result.NotificationDuration.String(),
+	}
 }
