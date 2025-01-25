@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
+
+	"github.com/spf13/viper"
 )
 
 const (
@@ -66,13 +66,44 @@ func (c *KafkaConf) String() string {
 }
 
 func NewConfig() Config {
-	file, err := os.ReadFile(configFile)
-	if err != nil {
+	// Указываем полный путь к файлу конфигурации
+	viper.SetConfigFile(configFile)
+
+	// Чтение переменных окружения
+	viper.AutomaticEnv() // Автоматически связывает переменные окружения с конфигурацией
+
+	// Связки для logger
+	viper.BindEnv("logger.level", "LOGGER_LEVEL")
+
+	// Связки для storage
+	viper.BindEnv("storage", "STORAGE_TYPE")
+
+	// Связки для notificationQueue
+	viper.BindEnv("notificationQueue", "NOTIFICATION_QUEUE")
+
+	// Связки для messageBroker
+	viper.BindEnv("messageBroker", "MESSAGE_BROKER")
+
+	// Связки для db
+	viper.BindEnv("db.host", "DB_HOST")
+	viper.BindEnv("db.port", "DB_PORT")
+	viper.BindEnv("db.user", "DB_USER")
+	viper.BindEnv("db.password", "DB_PASSWORD")
+	viper.BindEnv("db.name", "DB_NAME")
+	viper.BindEnv("db.schema", "DB_SCHEMA")
+
+	// Связки для kafka
+	viper.BindEnv("kafka.host", "KAFKA_HOST")
+	viper.BindEnv("kafka.port", "KAFKA_PORT")
+
+	// Чтение конфигурации из файла
+	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("не удалось прочитать файл конфигурации: %w", err))
 	}
-	config := Config{}
 
-	if err := json.Unmarshal(file, &config); err != nil {
+	// Загрузка конфигурации в структуру
+	config := Config{}
+	if err := viper.Unmarshal(&config); err != nil {
 		panic(fmt.Errorf("не удалось распарсить файл конфигурации: %w", err))
 	}
 	return config

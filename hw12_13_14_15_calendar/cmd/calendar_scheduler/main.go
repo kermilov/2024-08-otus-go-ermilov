@@ -38,7 +38,7 @@ func main() {
 	calendar := app.New(logg, storage)
 
 	producer := getProducer(logg, config)
-	scheduler := scheduler.NewScheduler(logg, calendar, producer, config.Duration.Duration)
+	scheduler := scheduler.NewScheduler(logg, calendar, producer, config.Duration)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
