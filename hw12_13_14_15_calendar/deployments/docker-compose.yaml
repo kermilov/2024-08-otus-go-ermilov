@@ -1,1 +1,80 @@
 version: "3"
+name: otus-calendar
+
+services:
+  
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5555:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  init-db:
+    image: postgres:15-alpine
+    depends_on:
+      - postgres
+    env_file:
+      - calendar-init-db.env
+      - calendar-db.env
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    entrypoint: [
+      "sh", "-c",
+      "psql \
+      -v db_name=$$DB_NAME -v db_schema=$$DB_SCHEMA \
+      -f /docker-entrypoint-initdb.d/init.sql"
+    ]
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.4
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+  kafka:
+    image: confluentinc/cp-kafka:7.4.4
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+  calendar-app:
+    image: calendar-app:latest
+    depends_on:
+      - postgres
+    ports:
+      - "8888:8080"
+      - "50051:50051"
+    env_file:
+      - calendar-db.env
+      - calendar-app.env
+
+  calendar-scheduler:
+    image: calendar-scheduler:latest
+    depends_on:
+      - postgres
+      - kafka
+    env_file:
+      - calendar-db.env
+      - calendar-scheduler.env     
+  
+  calendar-storer:
+    image: calendar-storer:latest
+    depends_on:
+      - postgres
+      - kafka
+    env_file:
+      - calendar-db.env
+      - calendar-storer.env    
+      
+volumes:
+  postgres_data:
+  
