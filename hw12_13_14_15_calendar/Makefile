@@ -43,7 +43,7 @@ generate:
 	protoc --proto_path=api/ --go_out=internal/server/grpc/pb --go-grpc_out=internal/server/grpc/pb api/*.proto
 
 up:
-    docker-compose -f deployments/docker-compose.yaml up -d
+    docker-compose -f deployments/docker-compose.yml up -d
 
 down:
-    docker-compose -f deployments/docker-compose.yaml down
+    docker-compose -f deployments/docker-compose.yml down
