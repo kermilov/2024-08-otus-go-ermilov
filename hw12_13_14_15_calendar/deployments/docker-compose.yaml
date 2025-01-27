@@ -74,6 +74,12 @@ services:
     env_file:
       - calendar-db.env
       - calendar-storer.env    
+  integration-tests:
+    image: calendar-integration-tests:latest
+    depends_on:
+      - calendar-app
+      - calendar-scheduler
+      - calendar-storer
       
 volumes:
   postgres_data:
