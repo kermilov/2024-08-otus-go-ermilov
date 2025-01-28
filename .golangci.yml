@@ -23,6 +23,7 @@ linters-settings:
           - github.com/cenkalti/backoff/v4
           - github.com/segmentio/kafka-go
           - github.com/spf13/viper
+          - github.com/lib/pq
           - github.com/kermilov/2024-08-otus-go-ermilov
 issues:
   exclude-rules:
