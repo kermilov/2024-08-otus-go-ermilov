@@ -3,11 +3,16 @@ package integrationtests
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/logger"
+	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/util"
+	_ "github.com/lib/pq"
+	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/require"
 )
 
@@ -72,6 +77,35 @@ func TestEventLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// Отправка уведомлений
+	// Чтение уведомления из Kafka
+	err = util.KafkaCheckConnect(ctx, "kafka:9092", logger.New("WARNING"), "notification-topic")
+	require.NoError(t, err)
+
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{"kafka:9092"},
+		Topic:   "notification-topic",
+	})
+
+	defer r.Close()
+
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	message, err := r.ReadMessage(ctx)
+	require.NoError(t, err)
+	require.Contains(t, string(message.Value), eventID)
+
+	// Проверка наличия записи в таблице notification
+	db, err := sql.Open("postgres", "postgres://postgres:postgres@postgres:5432/otus?sslmode=disable&search_path=calendar")
+	require.NoError(t, err)
+	defer db.Close()
+
+	var count int
+	err = db.QueryRow("select count(*) from notification where id = $1", eventID).Scan(&count)
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
 
 	// Удаление события
 	req, err = http.NewRequestWithContext(ctx, "DELETE", "http://calendar-app:8080/event/"+eventID, nil)
