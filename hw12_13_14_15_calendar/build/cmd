@@ -1,0 +1,5 @@
+rem из папки hw12_13_14_15_calendar
+docker build -f build/Dockerfile-calendar -t calendar-app .
+docker build -f build/Dockerfile-scheduler -t calendar-scheduler .
+docker build -f build/Dockerfile-storer -t calendar-storer .
+docker build -f build/Dockerfile-integration-tests -t calendar-integration-tests .

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 const (
@@ -31,31 +31,13 @@ var supportedMessageBrokers = map[string]struct{}{
 // Организация конфига в main принуждает нас сужать API компонентов, использовать
 // при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
 type Config struct {
-	Logger            LoggerConf     `json:"logger"`
-	Storage           string         `json:"storage"`
-	NotificationQueue string         `json:"notificationQueue"`
-	MessageBroker     string         `json:"messageBroker"`
-	DB                DBConf         `json:"db"`
-	Kafka             KafkaConf      `json:"kafka"`
-	Duration          CustomDuration `json:"duration"`
-}
-
-type CustomDuration struct {
-	time.Duration
-}
-
-func (d *CustomDuration) UnmarshalJSON(b []byte) error {
-	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
-	}
-
-	duration, err := time.ParseDuration(s)
-	if err != nil {
-		return err
-	}
-	d.Duration = duration
-	return nil
+	Logger            LoggerConf    `json:"logger"`
+	Storage           string        `json:"storage"`
+	NotificationQueue string        `json:"notificationQueue"`
+	MessageBroker     string        `json:"messageBroker"`
+	DB                DBConf        `json:"db"`
+	Kafka             KafkaConf     `json:"kafka"`
+	Duration          time.Duration `json:"duration"`
 }
 
 type LoggerConf struct {
@@ -86,13 +68,47 @@ func (c *KafkaConf) String() string {
 }
 
 func NewConfig() Config {
-	file, err := os.ReadFile(configFile)
-	if err != nil {
+	// Указываем полный путь к файлу конфигурации
+	viper.SetConfigFile(configFile)
+
+	// Чтение переменных окружения
+	viper.AutomaticEnv() // Автоматически связывает переменные окружения с конфигурацией
+
+	// Связки для logger
+	viper.BindEnv("logger.level", "LOGGER_LEVEL")
+
+	// Связки для storage
+	viper.BindEnv("storage", "STORAGE_TYPE")
+
+	// Связки для notificationQueue
+	viper.BindEnv("notificationQueue", "NOTIFICATION_QUEUE")
+
+	// Связки для messageBroker
+	viper.BindEnv("messageBroker", "MESSAGE_BROKER")
+
+	// Связки для db
+	viper.BindEnv("db.host", "DB_HOST")
+	viper.BindEnv("db.port", "DB_PORT")
+	viper.BindEnv("db.user", "DB_USER")
+	viper.BindEnv("db.password", "DB_PASSWORD")
+	viper.BindEnv("db.name", "DB_NAME")
+	viper.BindEnv("db.schema", "DB_SCHEMA")
+
+	// Связки для kafka
+	viper.BindEnv("kafka.host", "KAFKA_HOST")
+	viper.BindEnv("kafka.port", "KAFKA_PORT")
+
+	// Связки для duration
+	viper.BindEnv("duration", "DURATION")
+
+	// Чтение конфигурации из файла
+	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("не удалось прочитать файл конфигурации: %w", err))
 	}
-	config := Config{}
 
-	if err := json.Unmarshal(file, &config); err != nil {
+	// Загрузка конфигурации в структуру
+	config := Config{}
+	if err := viper.Unmarshal(&config); err != nil {
 		panic(fmt.Errorf("не удалось распарсить файл конфигурации: %w", err))
 	}
 	return config

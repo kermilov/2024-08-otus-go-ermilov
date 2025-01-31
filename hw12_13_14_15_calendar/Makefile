@@ -1,5 +1,8 @@
 BIN := "./bin/calendar"
-DOCKER_IMG="calendar:develop"
+DOCKER_APP_IMG="calendar:develop"
+DOCKER_SCHEDULER_IMG="calendar_scheduler:develop"
+DOCKER_STORER_IMG="calendar_storer:develop"
+DOCKER_INTEGRATION_TESTS_IMG="calendar_integration_tests:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
@@ -17,11 +20,26 @@ run: build
 build-img:
 	docker build \
 		--build-arg=LDFLAGS="$(LDFLAGS)" \
-		-t $(DOCKER_IMG) \
-		-f build/Dockerfile .
+		-t $(DOCKER_APP_IMG) \
+		-f build/Dockerfile-calendar . \
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t $(DOCKER_SCHEDULER_IMG) \
+		-f build/Dockerfile-scheduler . \
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t $(DOCKER_STORER_IMG) \
+		-f build/Dockerfile-storer . 
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		-t $(DOCKER_INTEGRATION_TESTS_IMG) \
+		-f build/Dockerfile-integration-tests . 
 
 run-img: build-img
-	docker run $(DOCKER_IMG)
+	docker run $(DOCKER_APP_IMG)
+	docker run $(DOCKER_SCHEDULER_IMG)
+	docker run $(DOCKER_STORER_IMG)
+	docker run $(DOCKER_INTEGRATION_TESTS_IMG)
 
 version: build
 	$(BIN) version
@@ -35,9 +53,19 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
-.PHONY: build run build-img run-img version test lint
-
 generate:
 	rm -rf internal/server/grpc/pb
 	mkdir -p internal/server/grpc/pb
 	protoc --proto_path=api/ --go_out=internal/server/grpc/pb --go-grpc_out=internal/server/grpc/pb api/*.proto
+
+up:
+	docker-compose -f deployments/docker-compose.yaml up -d
+
+down:
+	docker-compose -f deployments/docker-compose.yaml down
+
+integration-tests:
+	docker-compose -f deployments/docker-compose.yaml up --build --abort-on-container-exit --exit-code-from integration-tests
+	docker-compose -f deployments/docker-compose.yaml down	
+
+.PHONY: build run build-img run-img version test lint integration-tests

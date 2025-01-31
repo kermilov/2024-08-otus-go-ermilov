@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/producer"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -14,7 +13,11 @@ const (
 	timeOut = 10 * time.Second
 )
 
-func KafkaCheckConnect(ctx context.Context, addr string, logger producer.Logger, topic string) error {
+type Logger interface {
+	Warning(msg string)
+}
+
+func KafkaCheckConnect(ctx context.Context, addr string, logger Logger, topic string) error {
 	dialer := &kafka.Dialer{
 		Timeout: timeOut,
 	}

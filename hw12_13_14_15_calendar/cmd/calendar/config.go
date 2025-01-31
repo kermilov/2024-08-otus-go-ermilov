@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
+
+	"github.com/spf13/viper"
 )
 
 const (
@@ -66,13 +66,42 @@ func (c *GRPCServerConf) String() string {
 }
 
 func NewConfig() Config {
-	file, err := os.ReadFile(configFile)
-	if err != nil {
+	// Указываем полный путь к файлу конфигурации
+	viper.SetConfigFile(configFile)
+
+	// Чтение переменных окружения
+	viper.AutomaticEnv() // Автоматически связывает переменные окружения с конфигурацией
+
+	// Связки для logger
+	viper.BindEnv("logger.level", "LOGGER_LEVEL")
+
+	// Связки для storage
+	viper.BindEnv("storage", "STORAGE_TYPE")
+
+	// Связки для db
+	viper.BindEnv("db.host", "DB_HOST")
+	viper.BindEnv("db.port", "DB_PORT")
+	viper.BindEnv("db.user", "DB_USER")
+	viper.BindEnv("db.password", "DB_PASSWORD")
+	viper.BindEnv("db.name", "DB_NAME")
+	viper.BindEnv("db.schema", "DB_SCHEMA")
+
+	// Связки для http
+	viper.BindEnv("http.host", "HTTP_HOST")
+	viper.BindEnv("http.port", "HTTP_PORT")
+
+	// Связки для grpc
+	viper.BindEnv("grpc.host", "GRPC_HOST")
+	viper.BindEnv("grpc.port", "GRPC_PORT")
+
+	// Чтение конфигурации из файла
+	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("не удалось прочитать файл конфигурации: %w", err))
 	}
-	config := Config{}
 
-	if err := json.Unmarshal(file, &config); err != nil {
+	// Загрузка конфигурации в структуру
+	config := Config{}
+	if err := viper.Unmarshal(&config); err != nil {
 		panic(fmt.Errorf("не удалось распарсить файл конфигурации: %w", err))
 	}
 	return config
