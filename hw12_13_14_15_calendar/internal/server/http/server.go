@@ -54,16 +54,10 @@ var (
 			Help: "Total number of deleted events",
 		},
 	)
-	backgroundTasksStatus = prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Name: "background_tasks_status",
-			Help: "Status of background tasks",
-		},
-	)
 )
 
 func init() {
-	prometheus.MustRegister(requestsTotal, responseDuration, eventsCreated, eventsUpdated, eventsDeleted, backgroundTasksStatus)
+	prometheus.MustRegister(requestsTotal, responseDuration, eventsCreated, eventsUpdated, eventsDeleted)
 }
 
 func NewServer(logger server.Logger, app server.Application, addr string) *Server {
