@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/util"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Общий интерфейс логгера на разные реализации.
@@ -27,6 +28,19 @@ type Application interface {
 	SaveNotification(ctx context.Context, id, title string, datetime time.Time, userid int64) error
 }
 
+// Определяем свои метрики.
+var storeNotificationsTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name: "store_notifications_total",
+		Help: "Total number of store notifications",
+	},
+)
+
+func init() {
+	// Регистрируем метрики
+	prometheus.MustRegister(storeNotificationsTotal)
+}
+
 func SaveNotification(ctx context.Context, app Application, bytes []byte) error {
 	notification := util.Notification{}
 	err := json.Unmarshal(bytes, &notification)
@@ -42,5 +56,6 @@ func SaveNotification(ctx context.Context, app Application, bytes []byte) error 
 	if err != nil {
 		return err
 	}
+	storeNotificationsTotal.Inc()
 	return nil
 }

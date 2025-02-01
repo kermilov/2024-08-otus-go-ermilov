@@ -24,6 +24,8 @@ linters-settings:
           - github.com/segmentio/kafka-go
           - github.com/spf13/viper
           - github.com/lib/pq
+          - github.com/prometheus/client_golang/prometheus
+          - github.com/prometheus/client_golang/prometheus/promhttp
           - github.com/kermilov/2024-08-otus-go-ermilov
 issues:
   exclude-rules:

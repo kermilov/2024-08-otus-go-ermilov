@@ -20,6 +20,8 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, "postgres", actual.DB.Password)
 	require.Equal(t, "otus", actual.DB.Name)
 	require.Equal(t, "calendar", actual.DB.Schema)
+	require.Equal(t, "localhost", actual.HTTP.Host)
+	require.Equal(t, 8080, actual.HTTP.Port)
 	require.Equal(t, "localhost", actual.Kafka.Host)
 	require.Equal(t, 29092, actual.Kafka.Port)
 	require.Equal(t, 1*time.Minute, actual.Duration)

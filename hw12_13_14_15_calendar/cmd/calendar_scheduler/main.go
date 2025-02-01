@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/scheduler"
 	memorystorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage/sql"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var configFile string
@@ -36,6 +38,13 @@ func main() {
 
 	storage := getStorage(config)
 	calendar := app.New(logg, storage)
+
+	// Создаем HTTP сервер для метрик
+	metricsServer := &http.Server{
+		Addr:              config.HTTP.String(),
+		Handler:           promhttp.Handler(),
+		ReadHeaderTimeout: 10 * time.Second, // от G112: Potential Slowloris Attack
+	}
 
 	producer := getProducer(logg, config)
 	scheduler := scheduler.NewScheduler(logg, calendar, producer, config.Duration)
@@ -62,6 +71,11 @@ func main() {
 			logg.Error("failed to start scheduler: " + err.Error())
 			cancel()
 			return
+		}
+	}()
+	go func() {
+		if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logg.Error("failed to start metrics server: " + err.Error())
 		}
 	}()
 	<-ctx.Done()

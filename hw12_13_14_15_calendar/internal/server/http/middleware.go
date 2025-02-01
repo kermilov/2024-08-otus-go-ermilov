@@ -29,6 +29,9 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(lrw, r)
 		latency := time.Since(start)
 
+		requestsTotal.WithLabelValues(r.Method, r.URL.Path, http.StatusText(lrw.statusCode)).Inc()
+		responseDuration.WithLabelValues(r.Method, r.URL.Path).Observe(latency.Seconds())
+
 		logger.Printf("%s [%s] %s %s %s %d %d \"%s\"\n",
 			r.RemoteAddr,
 			start.Format("02/Jan/2006:15:04:05 -0700"),
