@@ -30,12 +30,13 @@ var supportedMessageBrokers = map[string]struct{}{
 // Организация конфига в main принуждает нас сужать API компонентов, использовать
 // при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
 type Config struct {
-	Logger            LoggerConf `json:"logger"`
-	Storage           string     `json:"storage"`
-	NotificationQueue string     `json:"notificationQueue"`
-	MessageBroker     string     `json:"messageBroker"`
-	DB                DBConf     `json:"db"`
-	Kafka             KafkaConf  `json:"kafka"`
+	Logger            LoggerConf     `json:"logger"`
+	Storage           string         `json:"storage"`
+	NotificationQueue string         `json:"notificationQueue"`
+	MessageBroker     string         `json:"messageBroker"`
+	DB                DBConf         `json:"db"`
+	HTTP              HTTPServerConf `json:"http"`
+	Kafka             KafkaConf      `json:"kafka"`
 }
 
 type LoggerConf struct {
@@ -54,6 +55,15 @@ type DBConf struct {
 func (db *DBConf) String() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable search_path=%s",
 		db.Host, db.Port, db.User, db.Password, db.Name, db.Schema)
+}
+
+type HTTPServerConf struct {
+	Host string `json:"host"`
+	Port int    `json:"port"`
+}
+
+func (c *HTTPServerConf) String() string {
+	return net.JoinHostPort(c.Host, strconv.Itoa(c.Port))
 }
 
 type KafkaConf struct {
@@ -91,6 +101,10 @@ func NewConfig() Config {
 	viper.BindEnv("db.password", "DB_PASSWORD")
 	viper.BindEnv("db.name", "DB_NAME")
 	viper.BindEnv("db.schema", "DB_SCHEMA")
+
+	// Связки для http
+	viper.BindEnv("http.host", "HTTP_HOST")
+	viper.BindEnv("http.port", "HTTP_PORT")
 
 	// Связки для kafka
 	viper.BindEnv("kafka.host", "KAFKA_HOST")

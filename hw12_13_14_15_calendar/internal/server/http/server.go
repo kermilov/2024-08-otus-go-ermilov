@@ -10,12 +10,54 @@ import (
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/server/http/dto"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Server struct {
 	http.Server
 	logger  server.Logger
 	service *Service
+}
+
+var (
+	requestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "api_requests_total",
+			Help: "Total number of API requests",
+		},
+		[]string{"method", "endpoint", "status"},
+	)
+	responseDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "api_response_duration_seconds",
+			Help:    "Response duration in seconds",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"method", "endpoint"},
+	)
+	eventsCreated = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "events_created_total",
+			Help: "Total number of created events",
+		},
+	)
+	eventsUpdated = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "events_updated_total",
+			Help: "Total number of updated events",
+		},
+	)
+	eventsDeleted = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "events_deleted_total",
+			Help: "Total number of deleted events",
+		},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(requestsTotal, responseDuration, eventsCreated, eventsUpdated, eventsDeleted)
 }
 
 func NewServer(logger server.Logger, app server.Application, addr string) *Server {
@@ -29,6 +71,7 @@ func NewServer(logger server.Logger, app server.Application, addr string) *Serve
 	serveMux.HandleFunc("DELETE /event/{id}", service.DeleteEvent)
 	serveMux.HandleFunc("GET /event/{id}", service.GetEventByID)
 	serveMux.HandleFunc("GET /events", service.GetEvents)
+	serveMux.Handle("/metrics", promhttp.Handler())
 
 	return &Server{
 		Server: http.Server{
@@ -142,6 +185,7 @@ func (s *Service) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+	eventsCreated.Inc()
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	resp := s.mapToDtoEvent(*result)
@@ -204,6 +248,7 @@ func (s *Service) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+	eventsUpdated.Inc()
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -219,6 +264,7 @@ func (s *Service) DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+	eventsDeleted.Inc()
 	w.WriteHeader(http.StatusOK)
 }
 

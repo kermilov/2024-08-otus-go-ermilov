@@ -6,6 +6,7 @@ import (
 
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/storage"
 	"github.com/kermilov/2024-08-otus-go-ermilov/hw12_13_14_15_calendar/internal/util"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Общий интерфейс логгера на разные реализации планировщика.
@@ -34,6 +35,19 @@ type Scheduler struct {
 	producer Producer
 	ticker   *time.Ticker
 	duration time.Duration
+}
+
+// Определяем свои метрики.
+var sendNotificationsTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name: "send_notifications_total",
+		Help: "Total number of send notifications",
+	},
+)
+
+func init() {
+	// Регистрируем метрики
+	prometheus.MustRegister(sendNotificationsTotal)
 }
 
 func NewScheduler(logger Logger, app Application, producer Producer, duration time.Duration) *Scheduler {
@@ -97,6 +111,8 @@ func (p *Scheduler) sendNotifications(ctx context.Context) error {
 			return err
 		}
 		p.app.SetIsSendNotification(ctx, []string{v.ID})
+		// Инкрементируем счетчик посланных уведомлений
+		sendNotificationsTotal.Inc()
 	}
 	return nil
 }
